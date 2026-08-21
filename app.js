@@ -68,7 +68,9 @@ async function runSkinScan() {
   generateRoutine();
 }
 
-// ─── BeautyGPT Assistant (Secure Server Proxy + Local Recommendation Engine) ───
+// ─── BeautyGPT Assistant State & Multi-Turn History ────────────────────────────
+let gptChatHistory = [];
+
 function toggleGptModal() {
   const modal = document.getElementById('gptModal');
   if (modal) modal.classList.toggle('hidden');
@@ -95,6 +97,10 @@ async function sendGptMsg() {
   input.value = '';
   msgs.scrollTop = msgs.scrollHeight;
 
+  // Append user turn to chat history
+  gptChatHistory.push({ role: 'user', content: txt });
+  if (gptChatHistory.length > 10) gptChatHistory = gptChatHistory.slice(-10);
+
   // Render typing indicator
   const botDiv = document.createElement('div');
   botDiv.className = 'gpt-msg bot';
@@ -102,26 +108,29 @@ async function sendGptMsg() {
   msgs.appendChild(botDiv);
   msgs.scrollTop = msgs.scrollHeight;
 
-  console.log('[BEAUTYGPT] send started');
+  console.log('[BEAUTYGPT] send started | History turns:', gptChatHistory.length);
 
   let assistantResponseHtml = null;
+  let rawAssistantText = null;
 
   try {
     // STEP 1: Strict Out-of-Scope & Special Intent Pre-Check
     const preCheckReply = checkPreRoutingIntents(txt);
     if (preCheckReply) {
       assistantResponseHtml = preCheckReply;
+      rawAssistantText = preCheckReply;
       return;
     }
 
     // STEP 2: Product Catalog Recommendation Intent Check (Uses BeautyAI Engine)
     if (isCatalogRecommendationIntent(txt)) {
       assistantResponseHtml = handleProductRecommendationQuery(txt);
+      rawAssistantText = assistantResponseHtml;
       return;
     }
 
     // STEP 3: Conversational Skincare Query -> OpenRouter Server Proxy (Gemini 2.5)
-    console.log('[BEAUTYGPT] sending /api/chat');
+    console.log('[BEAUTYGPT] sending /api/chat with multi-turn history');
 
     const fetchSignal = (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) 
       ? AbortSignal.timeout(25000) 
@@ -130,7 +139,7 @@ async function sendGptMsg() {
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: txt }),
+      body: JSON.stringify({ message: txt, messages: gptChatHistory }),
       signal: fetchSignal
     });
 
@@ -142,25 +151,36 @@ async function sendGptMsg() {
 
       if ((data.status === 'success' || data.ok === true) && data.message) {
         console.log('[BEAUTYGPT] assistant message extracted');
+        rawAssistantText = data.message;
         assistantResponseHtml = data.message.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
       } else if (data.status === 'error' || data.reason || data.error) {
         console.warn('[BEAUTYGPT] server error response (logged safely server-side)');
         assistantResponseHtml = `⚠️ <strong>AI Connection Temporarily Unavailable</strong><br/>I couldn't reach the AI Beauty Advisor right now. Please try again in a moment.`;
       } else {
         assistantResponseHtml = runBeautyGuardrailsEngine(txt);
+        rawAssistantText = assistantResponseHtml;
       }
     } else {
       console.warn(`[BEAUTYGPT] Non-200 Server HTTP Error ${res.status}`);
       assistantResponseHtml = runBeautyGuardrailsEngine(txt);
+      rawAssistantText = assistantResponseHtml;
     }
   } catch (err) {
     console.warn('[BEAUTYGPT] Network exception or timeout:', err.message);
     assistantResponseHtml = runBeautyGuardrailsEngine(txt);
+    rawAssistantText = assistantResponseHtml;
   } finally {
     // GUARANTEED CLEANUP: Thinking indicator is ALWAYS removed!
     if (!assistantResponseHtml) {
       assistantResponseHtml = runBeautyGuardrailsEngine(txt);
+      rawAssistantText = assistantResponseHtml;
     }
+
+    if (rawAssistantText) {
+      gptChatHistory.push({ role: 'assistant', content: rawAssistantText });
+      if (gptChatHistory.length > 10) gptChatHistory = gptChatHistory.slice(-10);
+    }
+
     console.log('[BEAUTYGPT] rendering response');
     botDiv.innerHTML = assistantResponseHtml;
     msgs.scrollTop = msgs.scrollHeight;

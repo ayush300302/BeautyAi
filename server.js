@@ -27,6 +27,12 @@ const MIME_TYPES = {
 
 const SYSTEM_PROMPT = `You are BeautyGPT, an expert AI Beauty & Skincare Advisor created for BeautyAI / Orbo.ai.
 
+CONVERSATIONAL CONTEXT DIRECTIVES:
+1. You are maintaining an ongoing multi-turn conversation with the user. Always interpret follow-up messages in the context of previous turns.
+2. Automatically resolve contextual references such as "it", "this", "that", "again", "next", "week 2", "make it longer", "what about night?", "can I use this?", "give me a schedule", "make it a month", "what should I do next?" to the skin type, routine, or active ingredients discussed in prior messages.
+3. Do NOT ask the user for information that was already provided in earlier turns (e.g., if they previously stated they have oily skin, do not ask them for their skin type again).
+4. Only ask clarifying questions when required information genuinely cannot be inferred from conversation history.
+
 RESPONSIBILITIES & CAPABILITIES:
 1. Answer all general skincare, product category, active ingredient, routine step, celebrity skincare, and dermatological safety questions warmly and intelligently.
 2. If asked about a celebrity, actor, or public figure's skincare routine (e.g., Sreeleela, Madhuri Dixit, Salman Khan, Virat Kohli, etc.):
@@ -56,18 +62,29 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // ─── POST /api/chat Proxy Endpoint ─────────────────────────────────────────
+  // ─── POST /api/chat Proxy Endpoint (Supports Multi-Turn History) ────────────
   if (req.method === 'POST' && req.url === '/api/chat') {
     let bodyStr = '';
     req.on('data', chunk => bodyStr += chunk);
     req.on('end', async () => {
       try {
         const body = JSON.parse(bodyStr || '{}');
-        const userMsg = body.message;
 
-        console.log(`[CHAT] request received: "${userMsg ? userMsg.slice(0, 40) : ''}"`);
+        // Extract conversation messages array or build single message turn
+        let conversationMessages = [];
+        if (Array.isArray(body.messages) && body.messages.length > 0) {
+          conversationMessages = body.messages.slice(-10).map(m => ({
+            role: m.role === 'assistant' ? 'assistant' : 'user',
+            content: String(m.content || '')
+          }));
+        } else if (body.message && typeof body.message === 'string') {
+          conversationMessages = [{ role: 'user', content: body.message }];
+        }
 
-        if (!userMsg || typeof userMsg !== 'string') {
+        const lastUserMsg = conversationMessages.slice().reverse().find(m => m.role === 'user')?.content || '';
+        console.log(`[CHAT] multi-turn request received (${conversationMessages.length} msgs) | Latest: "${lastUserMsg.slice(0, 40)}"`);
+
+        if (conversationMessages.length === 0) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ status: 'error', reason: 'Message parameter is required.' }));
           return;
@@ -100,7 +117,7 @@ const server = http.createServer(async (req, res) => {
               model: MODEL,
               messages: [
                 { role: 'system', content: SYSTEM_PROMPT },
-                { role: 'user', content: userMsg }
+                ...conversationMessages
               ]
             })
           });
@@ -147,7 +164,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // ─── Static File Server ────────────────────────────────────────────────────
+  // ─── Static File Server ────────────────(Handles all static asset routing)──
   let filePath = path.join(__dirname, req.url === '/' ? 'index.html' : req.url);
 
   fs.stat(filePath, (err, stats) => {
