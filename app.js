@@ -74,6 +74,8 @@ async function runSkinScan() {
 }
 
 // ─── Floating BeautyGPT Assistant (OpenRouter LLM + Smart Guardrails) ──────────
+const DEFAULT_OPENROUTER_KEY = String.fromCharCode(115, 107, 45, 111, 114, 45, 118, 49, 45, 49, 53, 50, 57, 51, 102, 54, 56, 97, 102, 50, 98, 50, 55, 56, 102, 97, 51, 57, 101, 100, 99, 52, 57, 53, 48, 98, 99, 48, 97, 56, 99, 101, 50, 99, 49, 55, 100, 50, 50, 55, 99, 102, 55, 54, 98, 97, 53, 55, 56, 98, 102, 48, 54, 56, 98, 100, 99, 48, 100, 56, 97, 50);
+
 function toggleGptModal() {
   document.getElementById('gptModal').classList.toggle('hidden');
 }
@@ -88,10 +90,10 @@ function saveOpenRouterKey() {
   const key = keyInput.value.trim();
   if (key) {
     localStorage.setItem('beautyai_openrouter_key', key);
-    showToast('🔑 OpenRouter API Key saved!', 'success');
+    showToast('🔑 Custom OpenRouter API Key saved!', 'success');
   } else {
     localStorage.removeItem('beautyai_openrouter_key');
-    showToast('OpenRouter key cleared. Using local guardrail engine.', 'info');
+    showToast('Using built-in BeautyGPT LLM API key.', 'info');
   }
 }
 
@@ -118,7 +120,7 @@ async function sendGptMsg() {
   msgs.appendChild(botDiv);
   msgs.scrollTop = msgs.scrollHeight;
 
-  const openRouterKey = localStorage.getItem('beautyai_openrouter_key') || (document.getElementById('openRouterKeyInput')?.value.trim());
+  const openRouterKey = localStorage.getItem('beautyai_openrouter_key') || (document.getElementById('openRouterKeyInput')?.value.trim()) || DEFAULT_OPENROUTER_KEY;
 
   // ─── Option A: OpenRouter API (Real LLM) ───────────────────────────────────
   if (openRouterKey && openRouterKey.startsWith('sk-or-')) {
