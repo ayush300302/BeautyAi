@@ -73,7 +73,7 @@ async function runSkinScan() {
   generateRoutine();
 }
 
-// ─── Floating BeautyGPT Assistant ─────────────────────────────────────────────
+// ─── Floating BeautyGPT Assistant (OpenRouter LLM + Smart Guardrails) ──────────
 function toggleGptModal() {
   document.getElementById('gptModal').classList.toggle('hidden');
 }
@@ -82,7 +82,20 @@ function handleGptKey(e) {
   if (e.key === 'Enter') sendGptMsg();
 }
 
-function sendGptMsg() {
+function saveOpenRouterKey() {
+  const keyInput = document.getElementById('openRouterKeyInput');
+  if (!keyInput) return;
+  const key = keyInput.value.trim();
+  if (key) {
+    localStorage.setItem('beautyai_openrouter_key', key);
+    showToast('🔑 OpenRouter API Key saved!', 'success');
+  } else {
+    localStorage.removeItem('beautyai_openrouter_key');
+    showToast('OpenRouter key cleared. Using local guardrail engine.', 'info');
+  }
+}
+
+async function sendGptMsg() {
   const input = document.getElementById('gptInput');
   const txt = input.value.trim();
   if (!txt) return;
@@ -98,28 +111,131 @@ function sendGptMsg() {
   input.value = '';
   msgs.scrollTop = msgs.scrollHeight;
 
-  // Auto AI Response
-  setTimeout(() => {
-    const botDiv = document.createElement('div');
-    botDiv.className = 'gpt-msg bot';
+  // Add typing indicator
+  const botDiv = document.createElement('div');
+  botDiv.className = 'gpt-msg bot';
+  botDiv.innerHTML = '<span style="opacity:0.6">BeautyGPT is thinking...</span>';
+  msgs.appendChild(botDiv);
+  msgs.scrollTop = msgs.scrollHeight;
 
-    const query = txt.toLowerCase();
-    let reply = "Based on dermatological principles, I recommend looking for products with Niacinamide or Hyaluronic Acid for skin barrier health.";
+  const openRouterKey = localStorage.getItem('beautyai_openrouter_key') || (document.getElementById('openRouterKeyInput')?.value.trim());
 
-    if (query.includes('acne') || query.includes('pimple') || query.includes('blackhead')) {
-      reply = "For acne-prone skin, use **Salicylic Acid (BHA)** or **Adapalene Retinoid**. Check out *Paula's Choice 2% BHA* or *The Ordinary Niacinamide* in your routine above!";
-    } else if (query.includes('sunscreen') || query.includes('spf') || query.includes('sun')) {
-      reply = "Daily SPF is essential! For oily skin, try **EltaMD UV Clear SPF 46** or **Biore Watery Essence SPF 50+**. For dry skin, try **Isntree Sun Gel**.";
-    } else if (query.includes('dry') || query.includes('hydrate')) {
-      reply = "For dry skin, focus on **Ceramides** and **Hyaluronic Acid**. *CeraVe Moisturizing Cream* and *Klairs Supple Preparation Toner* provide deep barrier repair.";
-    } else if (query.includes('aging') || query.includes('wrinkle') || query.includes('retinol')) {
-      reply = "For anti-aging, **Retinol** and **Peptides** are key. Note: Avoid pairing high-dose Vitamin C with Retinol in the exact same step to prevent redness!";
+  // ─── Option A: OpenRouter API (Real LLM) ───────────────────────────────────
+  if (openRouterKey && openRouterKey.startsWith('sk-or-')) {
+    try {
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openRouterKey}`,
+          'HTTP-Referer': window.location.href,
+          'X-Title': 'BeautyAI Assistant'
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: [
+            {
+              role: 'system',
+              content: `You are BeautyGPT, an expert AI Beauty & Skincare Advisor created for BeautyAI / Orbo.ai.
+Provide warm, concise, highly knowledgeable dermatological advice.
+GUARDRAILS:
+1. Warmly handle greetings, gratitude, and affection (e.g. if user says "I love you" or "thank you", reply warmly like "Aww, thank you! 💖 I am here to help your skin glow. What skincare questions do you have today?").
+2. Handle typos gracefully (e.g. "oily kil" -> oily skin).
+3. If query is off-topic (coding, math, politics), politely decline: "I am specialized strictly as your AI Beauty Advisor. I can only help with skincare routines, products, and ingredient safety!"
+4. Keep answers under 3-4 sentences, formatting key products or ingredients in bold.`
+            },
+            { role: 'user', content: txt }
+          ]
+        })
+      });
+
+      const data = await response.json();
+      if (data.choices && data.choices[0]?.message?.content) {
+        let reply = data.choices[0].message.content;
+        reply = reply.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        botDiv.innerHTML = reply;
+        msgs.scrollTop = msgs.scrollHeight;
+        return;
+      }
+    } catch (err) {
+      console.warn('OpenRouter API call failed, falling back to Guardrails Engine:', err);
     }
+  }
 
+  // ─── Option B: Local Guardrails & Smart Intent Engine ──────────────────────
+  setTimeout(() => {
+    const reply = runBeautyGuardrailsEngine(txt);
     botDiv.innerHTML = reply;
-    msgs.appendChild(botDiv);
     msgs.scrollTop = msgs.scrollHeight;
-  }, 600);
+  }, 400);
+}
+
+/**
+ * Smart Guardrail Engine for Local Mode:
+ * Handles affection ("i love you"), greetings, gratitude, typos ("oily kil"), off-topic queries, and skincare advice.
+ */
+function runBeautyGuardrailsEngine(userQuery) {
+  const q = userQuery.toLowerCase().trim();
+
+  // 1. Affection / Love Guardrail
+  if (/\b(love|marry|date|cute|sweet|best|awesome)\b/.test(q) && (q.includes('you') || q.includes('u') || q.length < 15)) {
+    return "Aww, thank you so much! 💖 I love helping you get healthy, glowing skin! Tell me your skin type or concern, and let's find your perfect routine ✨";
+  }
+
+  // 2. Greetings Guardrail
+  if (/^(hi|hello|hey|heyya|sup|good morning|good evening|greetings)\b/.test(q)) {
+    return "Hello there! ✨ Ready to build your personalized skincare routine? Tell me your skin type (Oily, Dry, Combination, Sensitive) or any concerns you have!";
+  }
+
+  // 3. Gratitude Guardrail
+  if (/\b(thank|thanks|thx|cool|great|awesome|helpful)\b/.test(q)) {
+    return "You're very welcome! 🌟 Stay consistent with your daily routine for the best skin results. Let me know if you need any ingredient safety checks!";
+  }
+
+  // 4. Off-topic Guardrail (math, code, politics, sports, general non-beauty)
+  if (/\b(python|javascript|code|math|calculate|president|football|cricket|recipe|weather)\b/.test(q) && !/\b(skin|face|cream|acne|serum|sunscreen)\b/.test(q)) {
+    return "I am specialized strictly as your **AI Beauty Advisor** 🧴. I can only assist with skincare routines, skin types, product matching, and dermatological safety!";
+  }
+
+  // 5. Typo-tolerant Skincare Intent Engine
+
+  // Oily Skin / Sebum (e.g. "oily kil", "greasy skin", "excess oil")
+  if (/\b(oily|greasy|sebum|oiliness|oil|kil|oily kil)\b/.test(q)) {
+    return "For **Oily Skin**, focus on lightweight oil-control ingredients: **Salicylic Acid (BHA)**, **Niacinamide**, and **Zinc**. Try *CeraVe Foaming Cleanser* and *Neutrogena Hydro Boost Gel*!";
+  }
+
+  // Dry Skin / Dehydration (e.g. "dry skn", "flaky", "dryness")
+  if (/\b(dry|dehydrated|flaky|peeling|dryness)\b/.test(q)) {
+    return "For **Dry Skin**, prioritize intense barrier repair: **Ceramides**, **Hyaluronic Acid**, and **Glycerin**. Check out *CeraVe Moisturizing Cream* and *La Roche-Posay Toleriane Cleanser*!";
+  }
+
+  // Acne / Blackheads / Breakouts
+  if (/\b(acne|pimple|blackhead|whitehead|breakout|zit|scars)\b/.test(q)) {
+    return "For **Acne-Prone Skin**, use unclogging active ingredients: **Salicylic Acid 2%**, **Adapalene**, or **Niacinamide**. *Paula's Choice 2% BHA* and *Differin Gel* are top dermatological picks!";
+  }
+
+  // Hyperpigmentation / Dark Spots / Dullness
+  if (/\b(pigment|dark spot|hyperpigmentation|dull|brighten|glow)\b/.test(q)) {
+    return "For **Hyperpigmentation & Dullness**, use brightening antioxidants: **Vitamin C (L-Ascorbic Acid)**, **Glycolic Acid (AHA)**, and **Niacinamide**. Try *SkinCeuticals C E Ferulic* or *The Ordinary Glycolic Acid*!";
+  }
+
+  // Anti-Aging / Wrinkles
+  if (/\b(aging|wrinkle|fine line|retinol|peptide|youth)\b/.test(q)) {
+    return "For **Anti-Aging**, golden standard ingredients are **Retinol**, **Peptides**, and **Broad-Spectrum Sunscreen**. Try *RoC Line Smoothing Serum* or *The Ordinary Retinol in Squalane*!";
+  }
+
+  // Sunscreen / SPF
+  if (/\b(sunscreen|spf|sun|uv)\b/.test(q)) {
+    return "Daily **SPF 30+** is mandatory to prevent sun damage! For oily skin: *EltaMD UV Clear SPF 46* or *Biore Watery Essence*. For dry skin: *Isntree Hyaluronic Sun Gel*.";
+  }
+
+  // Routine Step Order
+  if (/\b(step|order|routine|sequence|how to apply)\b/.test(q)) {
+    return "The ideal 5-step skincare routine order is: **1. Cleanser 🧴 → 2. Toner 💧 → 3. Serum/Active ✨ → 4. Moisturizer 🫧 → 5. Sunscreen (AM) ☀️**.";
+  }
+
+  // Default intelligent fallback
+  return "Based on dermatological principles, I recommend selecting products enriched with **Niacinamide** (for oil control & redness) or **Hyaluronic Acid & Ceramides** (for barrier repair). Configure your profile on the left for a exact match!";
 }
 
 // ─── Page Switching ────────────────────────────────────────────────────────────
