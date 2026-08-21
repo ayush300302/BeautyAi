@@ -102,37 +102,29 @@ async function sendGptMsg() {
   msgs.appendChild(botDiv);
   msgs.scrollTop = msgs.scrollHeight;
 
-  console.log('BEAUTYGPT DEBUG: 1. sendGptMsg started');
+  console.log('[BEAUTYGPT] send started');
 
-  const setBotResponse = (htmlContent) => {
-    botDiv.innerHTML = htmlContent;
-    msgs.scrollTop = msgs.scrollHeight;
-    console.log('BEAUTYGPT DEBUG: 7. rendering response & thinking state removed');
-  };
+  let assistantResponseHtml = null;
 
-  // STEP 1: Strict Out-of-Scope & Special Intent Pre-Check
-  const preCheckReply = checkPreRoutingIntents(txt);
-  if (preCheckReply) {
-    setTimeout(() => setBotResponse(preCheckReply), 200);
-    return;
-  }
-
-  // STEP 2: Product Catalog Recommendation Intent Check (Uses BeautyAI Engine)
-  if (isCatalogRecommendationIntent(txt)) {
-    setTimeout(() => {
-      const recReply = handleProductRecommendationQuery(txt);
-      setBotResponse(recReply);
-    }, 300);
-    return;
-  }
-
-  // STEP 3: Conversational Skincare Query -> OpenRouter Server Proxy (Gemini 2.5)
   try {
-    console.log('BEAUTYGPT DEBUG: 2. request sent to /api/chat');
-    
-    // 20-second client-side timeout to prevent hanging UI
+    // STEP 1: Strict Out-of-Scope & Special Intent Pre-Check
+    const preCheckReply = checkPreRoutingIntents(txt);
+    if (preCheckReply) {
+      assistantResponseHtml = preCheckReply;
+      return;
+    }
+
+    // STEP 2: Product Catalog Recommendation Intent Check (Uses BeautyAI Engine)
+    if (isCatalogRecommendationIntent(txt)) {
+      assistantResponseHtml = handleProductRecommendationQuery(txt);
+      return;
+    }
+
+    // STEP 3: Conversational Skincare Query -> OpenRouter Server Proxy (Gemini 2.5)
+    console.log('[BEAUTYGPT] sending /api/chat');
+
     const fetchSignal = (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) 
-      ? AbortSignal.timeout(20000) 
+      ? AbortSignal.timeout(25000) 
       : undefined;
 
     const res = await fetch('/api/chat', {
@@ -142,33 +134,38 @@ async function sendGptMsg() {
       signal: fetchSignal
     });
 
-    console.log(`BEAUTYGPT DEBUG: 3. response received | status: ${res.status}`);
+    console.log(`[BEAUTYGPT] response received: HTTP ${res.status}`);
 
     if (res.ok) {
       const data = await res.json();
-      console.log('BEAUTYGPT DEBUG: 4. response body parsed', data);
+      console.log('[BEAUTYGPT] response parsed');
 
-      if (data.status === 'success' && data.message) {
-        console.log('BEAUTYGPT DEBUG: 5. assistant response received');
-        let reply = data.message.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        setBotResponse(reply);
-        return;
-      } else if (data.status === 'error') {
-        console.warn('BEAUTYGPT DEBUG: Server returned error status:', data.reason);
+      if ((data.status === 'success' || data.ok === true) && data.message) {
+        console.log('[BEAUTYGPT] assistant message extracted');
+        assistantResponseHtml = data.message.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      } else if (data.status === 'error' || data.reason || data.error) {
+        console.warn('[BEAUTYGPT] server error payload:', data);
+        assistantResponseHtml = `⚠️ <strong>BeautyGPT Warning</strong><br/>${data.reason || data.error || 'Server error'}`;
+      } else {
+        assistantResponseHtml = runBeautyGuardrailsEngine(txt);
       }
     } else {
-      console.warn(`BEAUTYGPT DEBUG: Server HTTP Error ${res.status}`);
+      console.warn(`[BEAUTYGPT] Non-200 Server HTTP Error ${res.status}`);
+      assistantResponseHtml = runBeautyGuardrailsEngine(txt);
     }
   } catch (err) {
-    console.warn('BEAUTYGPT DEBUG: Fetch exception / timeout:', err.message);
+    console.warn('[BEAUTYGPT] Network exception or timeout:', err.message);
+    assistantResponseHtml = runBeautyGuardrailsEngine(txt);
+  } finally {
+    // GUARANTEED CLEANUP: Thinking indicator is ALWAYS removed!
+    if (!assistantResponseHtml) {
+      assistantResponseHtml = runBeautyGuardrailsEngine(txt);
+    }
+    console.log('[BEAUTYGPT] rendering response');
+    botDiv.innerHTML = assistantResponseHtml;
+    msgs.scrollTop = msgs.scrollHeight;
+    console.log('[BEAUTYGPT] thinking state removed');
   }
-
-  // STEP 4: Smart Guardrails Engine Fallback (Guarantees thinking state is removed in ALL scenarios)
-  setTimeout(() => {
-    console.log('BEAUTYGPT DEBUG: 6. executing fallback response');
-    const reply = runBeautyGuardrailsEngine(txt);
-    setBotResponse(reply);
-  }, 300);
 }
 
 /**
