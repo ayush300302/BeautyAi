@@ -10,8 +10,10 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
+const PORT = process.env.PORT || 8000;
 const DEFAULT_SERVER_KEY = String.fromCharCode(115, 107, 45, 111, 114, 45, 118, 49, 45, 49, 53, 50, 57, 51, 102, 54, 56, 97, 102, 50, 98, 50, 55, 56, 102, 97, 51, 57, 101, 100, 99, 52, 57, 53, 48, 98, 99, 48, 97, 56, 99, 101, 50, 99, 49, 55, 100, 50, 50, 55, 99, 102, 55, 54, 98, 97, 53, 55, 56, 98, 102, 48, 54, 56, 98, 100, 99, 48, 100, 56, 97, 50);
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY || DEFAULT_SERVER_KEY;
+const MODEL = 'google/gemini-2.5-flash';
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -28,7 +30,7 @@ const SYSTEM_PROMPT = `You are BeautyGPT, an expert AI Beauty & Skincare Advisor
 
 RESPONSIBILITIES & CAPABILITIES:
 1. Answer all general skincare, product category, active ingredient, routine step, celebrity skincare, and dermatological safety questions warmly and intelligently.
-2. If asked about a celebrity, actor, or public figure's skincare routine (e.g., Sreeleela, Virat Kohli, etc.):
+2. If asked about a celebrity, actor, or public figure's skincare routine (e.g., Sreeleela, Madhuri Dixit, Virat Kohli, etc.):
    - If verified information about their specific routine is available, share it concisely.
    - If reliable/verified information is NOT available, DO NOT invent personal details, fake products, or fake routines. Instead, respond honestly: "I don't have verified details about her personal skincare routine, so I don't want to make one up. However, for glowing, healthy skin, dermatologists generally recommend..." and explain principles suitable for their skin type or public skincare context.
 3. If asked for product recommendations, explain ideal ingredient combinations and suggest product types (formatting active ingredients in bold).
@@ -48,7 +50,19 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // ─── API LLM Proxy Endpoint ────────────────────────────────────────────────
+  // ─── GET /api/health Diagnostic Endpoint ───────────────────────────────────
+  if (req.method === 'GET' && req.url === '/api/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      status: 'ok',
+      has_key: !!(OPENROUTER_KEY && OPENROUTER_KEY.length > 10),
+      key_length: OPENROUTER_KEY ? OPENROUTER_KEY.length : 0,
+      configured_model: MODEL
+    }));
+    return;
+  }
+
+  // ─── POST /api/chat Proxy Endpoint ─────────────────────────────────────────
   if (req.method === 'POST' && req.url === '/api/chat') {
     let bodyStr = '';
     req.on('data', chunk => bodyStr += chunk);
@@ -57,48 +71,85 @@ const server = http.createServer(async (req, res) => {
         const body = JSON.parse(bodyStr || '{}');
         const userMsg = body.message;
 
+        console.log(`[SERVER DEBUG] CHAT REQUEST RECEIVED: "${userMsg ? userMsg.slice(0, 50) : ''}"`);
+
         if (!userMsg || typeof userMsg !== 'string') {
           res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Message parameter is required.' }));
+          res.end(JSON.stringify({ status: 'error', reason: 'Message parameter is required.' }));
           return;
         }
 
-        const openRouterRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${OPENROUTER_KEY}`,
-            'HTTP-Referer': 'https://beautyai-recommender-app.azurewebsites.net',
-            'X-Title': 'BeautyAI Assistant'
-          },
-          body: JSON.stringify({
-            model: 'google/gemini-2.5-flash',
-            messages: [
-              { role: 'system', content: SYSTEM_PROMPT },
-              { role: 'user', content: userMsg }
-            ]
-          })
-        });
-
-        if (!openRouterRes.ok) {
-          console.error(`OpenRouter HTTP ${openRouterRes.status}`);
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ status: 'fallback', reason: `OpenRouter HTTP ${openRouterRes.status}` }));
+        if (!OPENROUTER_KEY || OPENROUTER_KEY.length < 10) {
+          console.error('[SERVER DEBUG] OPENROUTER_KEY is missing or invalid!');
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ status: 'error', reason: 'OPENROUTER_KEY missing on server.' }));
           return;
         }
 
-        const data = await openRouterRes.json();
-        if (data.choices && data.choices[0]?.message?.content) {
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ status: 'success', message: data.choices[0].message.content }));
-        } else {
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ status: 'fallback', reason: 'OpenRouter empty choices' }));
+        console.log(`[SERVER DEBUG] OPENROUTER REQUEST START (Model: ${MODEL})`);
+
+        // 25-second AbortController timeout to prevent hanging sockets
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 25000);
+
+        try {
+          const openRouterRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            signal: controller.signal,
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${OPENROUTER_KEY}`,
+              'HTTP-Referer': 'https://beautyai-recommender-app.azurewebsites.net',
+              'X-Title': 'BeautyAI Assistant'
+            },
+            body: JSON.stringify({
+              model: MODEL,
+              messages: [
+                { role: 'system', content: SYSTEM_PROMPT },
+                { role: 'user', content: userMsg }
+              ]
+            })
+          });
+
+          clearTimeout(timeoutId);
+          console.log(`[SERVER DEBUG] OPENROUTER RESPONSE STATUS: ${openRouterRes.status}`);
+
+          if (!openRouterRes.ok) {
+            const errText = await openRouterRes.text();
+            console.error(`[SERVER DEBUG] OPENROUTER ERROR ${openRouterRes.status}: ${errText.slice(0, 150)}`);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ status: 'error', code: openRouterRes.status, reason: `OpenRouter HTTP ${openRouterRes.status}: ${errText.slice(0, 150)}` }));
+            return;
+          }
+
+          const data = await openRouterRes.json();
+          console.log('[SERVER DEBUG] OPENROUTER RESPONSE RECEIVED & PARSED');
+
+          if (data.choices && data.choices[0]?.message?.content) {
+            console.log('[SERVER DEBUG] CLIENT RESPONSE SENT');
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ status: 'success', message: data.choices[0].message.content }));
+          } else {
+            console.error('[SERVER DEBUG] OPENROUTER EMPTY CHOICES');
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ status: 'error', reason: 'OpenRouter returned empty choices array.' }));
+          }
+        } catch (fetchErr) {
+          clearTimeout(timeoutId);
+          if (fetchErr.name === 'AbortError') {
+            console.error('[SERVER DEBUG] OPENROUTER REQUEST TIMED OUT (25s)');
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ status: 'error', reason: 'AI request timed out after 25s.' }));
+          } else {
+            console.error('[SERVER DEBUG] FETCH ERROR:', fetchErr.message);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ status: 'error', reason: fetchErr.message }));
+          }
         }
       } catch (err) {
-        console.error('LLM Proxy Error:', err.message);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ status: 'fallback', reason: err.message }));
+        console.error('[SERVER DEBUG] THROWABLE ERROR:', err.message);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ status: 'error', reason: `Server error: ${err.message}` }));
       }
     });
     return;
@@ -106,7 +157,6 @@ const server = http.createServer(async (req, res) => {
 
   // ─── Static File Server ────────────────────────────────────────────────────
   let filePath = path.join(__dirname, req.url === '/' ? 'index.html' : req.url);
-  const ext = path.extname(filePath).toLowerCase();
 
   fs.stat(filePath, (err, stats) => {
     if (err || !stats.isFile()) {
@@ -128,5 +178,6 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`✨ BeautyAI Server running on http://localhost:${PORT}`);
-  console.log(`🔒 OpenRouter Key: Configured Server-Side (Zero Client Exposure)`);
+  console.log(`🔒 OpenRouter Key: Configured Server-Side (${OPENROUTER_KEY.length} chars)`);
+  console.log(`🤖 Model: ${MODEL}`);
 });

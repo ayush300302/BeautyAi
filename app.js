@@ -102,13 +102,18 @@ async function sendGptMsg() {
   msgs.appendChild(botDiv);
   msgs.scrollTop = msgs.scrollHeight;
 
+  console.log('BEAUTYGPT DEBUG: 1. sendGptMsg started');
+
+  const setBotResponse = (htmlContent) => {
+    botDiv.innerHTML = htmlContent;
+    msgs.scrollTop = msgs.scrollHeight;
+    console.log('BEAUTYGPT DEBUG: 7. rendering response & thinking state removed');
+  };
+
   // STEP 1: Strict Out-of-Scope & Special Intent Pre-Check
   const preCheckReply = checkPreRoutingIntents(txt);
   if (preCheckReply) {
-    setTimeout(() => {
-      botDiv.innerHTML = preCheckReply;
-      msgs.scrollTop = msgs.scrollHeight;
-    }, 250);
+    setTimeout(() => setBotResponse(preCheckReply), 200);
     return;
   }
 
@@ -116,39 +121,54 @@ async function sendGptMsg() {
   if (isCatalogRecommendationIntent(txt)) {
     setTimeout(() => {
       const recReply = handleProductRecommendationQuery(txt);
-      botDiv.innerHTML = recReply;
-      msgs.scrollTop = msgs.scrollHeight;
-    }, 350);
+      setBotResponse(recReply);
+    }, 300);
     return;
   }
 
   // STEP 3: Conversational Skincare Query -> OpenRouter Server Proxy (Gemini 2.5)
   try {
+    console.log('BEAUTYGPT DEBUG: 2. request sent to /api/chat');
+    
+    // 20-second client-side timeout to prevent hanging UI
+    const fetchSignal = (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) 
+      ? AbortSignal.timeout(20000) 
+      : undefined;
+
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: txt })
+      body: JSON.stringify({ message: txt }),
+      signal: fetchSignal
     });
+
+    console.log(`BEAUTYGPT DEBUG: 3. response received | status: ${res.status}`);
 
     if (res.ok) {
       const data = await res.json();
+      console.log('BEAUTYGPT DEBUG: 4. response body parsed', data);
+
       if (data.status === 'success' && data.message) {
+        console.log('BEAUTYGPT DEBUG: 5. assistant response received');
         let reply = data.message.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        botDiv.innerHTML = reply;
-        msgs.scrollTop = msgs.scrollHeight;
+        setBotResponse(reply);
         return;
+      } else if (data.status === 'error') {
+        console.warn('BEAUTYGPT DEBUG: Server returned error status:', data.reason);
       }
+    } else {
+      console.warn(`BEAUTYGPT DEBUG: Server HTTP Error ${res.status}`);
     }
   } catch (err) {
-    console.warn('Server LLM Proxy unavailable, using smart guardrails engine:', err.message);
+    console.warn('BEAUTYGPT DEBUG: Fetch exception / timeout:', err.message);
   }
 
-  // STEP 4: Smart Guardrails Engine Fallback (Rich, topic-specific dermatological guidance)
+  // STEP 4: Smart Guardrails Engine Fallback (Guarantees thinking state is removed in ALL scenarios)
   setTimeout(() => {
+    console.log('BEAUTYGPT DEBUG: 6. executing fallback response');
     const reply = runBeautyGuardrailsEngine(txt);
-    botDiv.innerHTML = reply;
-    msgs.scrollTop = msgs.scrollHeight;
-  }, 350);
+    setBotResponse(reply);
+  }, 300);
 }
 
 /**
