@@ -144,8 +144,8 @@ async function sendGptMsg() {
         console.log('[BEAUTYGPT] assistant message extracted');
         assistantResponseHtml = data.message.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
       } else if (data.status === 'error' || data.reason || data.error) {
-        console.warn('[BEAUTYGPT] server error payload:', data);
-        assistantResponseHtml = `⚠️ <strong>BeautyGPT Warning</strong><br/>${data.reason || data.error || 'Server error'}`;
+        console.warn('[BEAUTYGPT] server error response (logged safely server-side)');
+        assistantResponseHtml = `⚠️ <strong>AI Connection Temporarily Unavailable</strong><br/>I couldn't reach the AI Beauty Advisor right now. Please try again in a moment.`;
       } else {
         assistantResponseHtml = runBeautyGuardrailsEngine(txt);
       }
