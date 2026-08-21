@@ -1,5 +1,8 @@
 # BeautyAI — Personalized Skincare Recommendation Engine
 > **Technical Assignment Submission** | Inspired by **[Orbo.ai](https://orbo.ai/)** & **Nykaa**
+>
+> 🌐 **Live Azure Deployment**: [https://beautyai-recommender-app.azurewebsites.net](https://beautyai-recommender-app.azurewebsites.net)  
+> 📦 **GitHub Repository**: [https://github.com/ayush300302/BeautyAi](https://github.com/ayush300302/BeautyAi)
 
 BeautyAI is an intelligent, full-stack recommendation system designed to match users with personalized 5-step skincare routines based on their unique skin type, skin concerns, budget, and ingredient preferences.
 
@@ -7,7 +10,11 @@ BeautyAI is an intelligent, full-stack recommendation system designed to match u
 
 ## 🌟 Quick Start & Running Locally
 
-### Option 1: Web Interface (Interactive Testing UI)
+### Option 1: Live Azure Deployment (Cloud Hosted)
+Access the live deployed application anywhere at:  
+**[https://beautyai-recommender-app.azurewebsites.net](https://beautyai-recommender-app.azurewebsites.net)**
+
+### Option 2: Web Interface (Local HTTP Server)
 Run a local HTTP server in the project directory:
 ```bash
 python -m http.server 8000
