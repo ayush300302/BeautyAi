@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BeautyAI — AI Skincare Recommendation Engine | Orbo.ai Inspired</title>
+  <meta name="description" content="AI-powered personalized skincare recommendation system. Hybrid content-based and collaborative filtering for your skin type, concerns, and preferences." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- SVG Gradient Defs -->
+<svg class="gradient-defs">
+  <defs>
+    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#E879F9"/>
+      <stop offset="100%" stop-color="#F472B6"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<!-- ─── Navigation ─────────────────────────────────────────────────────── -->
+<nav class="nav">
+  <a href="#" class="nav-logo">
+    <div class="nav-logo-icon">✨</div>
+    <div>
+      <div class="nav-logo-text">Beauty<span>AI</span></div>
+    </div>
+  </a>
+
+  <div class="nav-tabs" role="tablist">
+    <button class="nav-tab active" id="nav-recommender" onclick="switchPage('recommender')" role="tab">🎯 Recommender</button>
+    <button class="nav-tab" id="nav-metrics" onclick="switchPage('metrics')" role="tab">📊 Metrics</button>
+    <button class="nav-tab" id="nav-testcases" onclick="switchPage('testcases')" role="tab">🧪 Test Cases</button>
+    <button class="nav-tab" id="nav-benchmark" onclick="switchPage('benchmark')" role="tab">🔬 Benchmark</button>
+  </div>
+
+  <div class="nav-status">
+    <div class="status-dot"></div>
+    <span>Engine Online</span>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- PAGE: RECOMMENDER                                                       -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div id="page-recommender" class="page-section active">
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-badge">✨ Inspired by Orbo.ai — BeautyGPT + Smart Skin Analysis</div>
+    <h1>Your Personalized<br/><span class="gradient-text">Skincare Routine</span></h1>
+    <p class="hero-subtitle">
+      A hybrid AI recommendation engine matching you with the perfect skincare routine based on skin type, concerns, and active ingredients.
+    </p>
+    <div class="hero-stats">
+      <div>
+        <div class="hero-stat-value">45+</div>
+        <div class="hero-stat-label">Products</div>
+      </div>
+      <div>
+        <div class="hero-stat-value">5 Steps</div>
+        <div class="hero-stat-label">Routine</div>
+      </div>
+      <div>
+        <div class="hero-stat-value">Hybrid</div>
+        <div class="hero-stat-label">Algorithm</div>
+      </div>
+      <div>
+        <div class="hero-stat-value">&lt;2ms</div>
+        <div class="hero-stat-label">Latency</div>
+      </div>
+    </div>
+
+    <!-- AI Skin Diagnostic Scanner Widget (Orbo.ai Inspired) -->
+    <div class="scanner-card">
+      <div class="scanner-viewfinder">
+        <div class="scanner-face-icon">👤</div>
+        <div class="scanner-line"></div>
+      </div>
+      <div class="scanner-info">
+        <div class="scanner-title">
+          <span>📷 AI Skin Diagnostic Simulator</span>
+          <span style="font-size:11px; padding:2px 8px; background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.3); border-radius:999px; color:var(--sky);">Live Scan</span>
+        </div>
+        <div class="scanner-desc">
+          Simulate an AI facial scan (like Orbo Smart Skin Analysis) to auto-detect skin metrics and set your recommendation parameters instantly.
+        </div>
+        <div class="scanner-metrics">
+          <div class="scanner-metric-item">
+            <div class="scanner-metric-val" id="scan-hydration">84%</div>
+            <div class="scanner-metric-lbl">Hydration</div>
+          </div>
+          <div class="scanner-metric-item">
+            <div class="scanner-metric-val" id="scan-sebum" style="color:var(--rose)">High</div>
+            <div class="scanner-metric-lbl">Sebum/Oil</div>
+          </div>
+          <div class="scanner-metric-item">
+            <div class="scanner-metric-val" id="scan-pores" style="color:var(--amber)">Mild</div>
+            <div class="scanner-metric-lbl">Pores</div>
+          </div>
+          <div class="scanner-metric-item">
+            <div class="scanner-metric-val" id="scan-score" style="color:var(--mint)">92%</div>
+            <div class="scanner-metric-lbl">Skin Score</div>
+          </div>
+        </div>
+      </div>
+      <button class="btn-scan" onclick="runSkinScan()">
+        ⚡ Simulate AI Scan
+      </button>
+    </div>
+  </section>
+
+  <!-- Main Layout -->
+  <div class="main-layout">
+    <div class="two-col">
+
+      <!-- ─── Input Panel ────────────────────────────────────────────── -->
+      <div class="input-panel">
+        <div class="glass-card" style="padding: 28px;">
+          <div class="panel-header">
+            <div class="panel-icon">🔬</div>
+            <div>
+              <div class="panel-title">Skin Profile</div>
+              <div class="panel-subtitle">Configure your skin parameters</div>
+            </div>
+          </div>
+
+          <!-- Skin Type -->
+          <div class="form-group">
+            <label class="form-label">Skin Type</label>
+            <div class="chip-group" id="skinTypeGroup">
+              <div class="chip" data-group="skinType" data-value="oily" onclick="toggleChip(this, 'skinType')" id="chip-oily">💧 Oily</div>
+              <div class="chip" data-group="skinType" data-value="dry" onclick="toggleChip(this, 'skinType')" id="chip-dry">🌵 Dry</div>
+              <div class="chip" data-group="skinType" data-value="combination" onclick="toggleChip(this, 'skinType')" id="chip-combination">⚖️ Combination</div>
+              <div class="chip" data-group="skinType" data-value="sensitive" onclick="toggleChip(this, 'skinType')" id="chip-sensitive">🌸 Sensitive</div>
+              <div class="chip" data-group="skinType" data-value="normal" onclick="toggleChip(this, 'skinType')" id="chip-normal">✨ Normal</div>
+              <div class="chip" data-group="skinType" data-value="acne_prone" onclick="toggleChip(this, 'skinType')" id="chip-acne_prone">⚡ Acne-Prone</div>
+            </div>
+          </div>
+
+          <!-- Concerns -->
+          <div class="form-group">
+            <label class="form-label">Primary Concerns</label>
+            <div class="chip-group" id="concernGroup">
+              <div class="chip" data-group="concern" data-value="acne" onclick="toggleChip(this, 'concern')" id="chip-acne">🔴 Acne</div>
+              <div class="chip" data-group="concern" data-value="dryness" onclick="toggleChip(this, 'concern')" id="chip-dryness">💧 Dryness</div>
+              <div class="chip" data-group="concern" data-value="oiliness" onclick="toggleChip(this, 'concern')" id="chip-oiliness">✨ Oiliness</div>
+              <div class="chip" data-group="concern" data-value="aging" onclick="toggleChip(this, 'concern')" id="chip-aging">⏰ Aging</div>
+              <div class="chip" data-group="concern" data-value="hyperpigmentation" onclick="toggleChip(this, 'concern')" id="chip-hyperpigmentation">🟫 Pigmentation</div>
+              <div class="chip" data-group="concern" data-value="sensitivity" onclick="toggleChip(this, 'concern')" id="chip-sensitivity">🌸 Sensitivity</div>
+              <div class="chip" data-group="concern" data-value="pores" onclick="toggleChip(this, 'concern')" id="chip-pores">⚫ Large Pores</div>
+              <div class="chip" data-group="concern" data-value="dullness" onclick="toggleChip(this, 'concern')" id="chip-dullness">🌫️ Dullness</div>
+              <div class="chip" data-group="concern" data-value="sun_damage" onclick="toggleChip(this, 'concern')" id="chip-sun_damage">☀️ Sun Damage</div>
+              <div class="chip" data-group="concern" data-value="redness" onclick="toggleChip(this, 'concern')" id="chip-redness">🔴 Redness</div>
+              <div class="chip" data-group="concern" data-value="uneven_texture" onclick="toggleChip(this, 'concern')" id="chip-uneven_texture">🪨 Texture</div>
+              <div class="chip" data-group="concern" data-value="dehydration" onclick="toggleChip(this, 'concern')" id="chip-dehydration">🫧 Dehydration</div>
+            </div>
+          </div>
+
+          <!-- Key Ingredients -->
+          <div class="form-group">
+            <label class="form-label">Preferred Ingredients <span style="font-size:11px; font-weight:400; color: var(--text-muted)">(optional)</span></label>
+            <div class="ingredient-pill-grid" id="ingredientGroup">
+              <div class="ingredient-pill" data-value="niacinamide" onclick="toggleIngredient(this)" id="ing-niacinamide">Niacinamide</div>
+              <div class="ingredient-pill" data-value="salicylic_acid" onclick="toggleIngredient(this)" id="ing-salicylic_acid">Salicylic Acid</div>
+              <div class="ingredient-pill" data-value="hyaluronic_acid" onclick="toggleIngredient(this)" id="ing-hyaluronic_acid">Hyaluronic Acid</div>
+              <div class="ingredient-pill" data-value="retinol" onclick="toggleIngredient(this)" id="ing-retinol">Retinol</div>
+              <div class="ingredient-pill" data-value="vitamin_c" onclick="toggleIngredient(this)" id="ing-vitamin_c">Vitamin C</div>
+              <div class="ingredient-pill" data-value="ceramides" onclick="toggleIngredient(this)" id="ing-ceramides">Ceramides</div>
+              <div class="ingredient-pill" data-value="glycolic_acid" onclick="toggleIngredient(this)" id="ing-glycolic_acid">Glycolic Acid</div>
+              <div class="ingredient-pill" data-value="centella_asiatica" onclick="toggleIngredient(this)" id="ing-centella_asiatica">Centella Asiatica</div>
+              <div class="ingredient-pill" data-value="zinc_oxide" onclick="toggleIngredient(this)" id="ing-zinc_oxide">Zinc Oxide</div>
+              <div class="ingredient-pill" data-value="peptides" onclick="toggleIngredient(this)" id="ing-peptides">Peptides</div>
+            </div>
+          </div>
+
+          <!-- Budget -->
+          <div class="form-group">
+            <label class="form-label">Max Budget per Product</label>
+            <div class="slider-wrap">
+              <div class="slider-value" id="budgetValue">$60</div>
+              <input type="range" id="budgetSlider" min="5" max="200" value="60" step="5"
+                oninput="updateBudget(this.value)" aria-label="Max budget per product" />
+            </div>
+          </div>
+
+          <!-- Min Rating -->
+          <div class="form-group">
+            <label class="form-label">Minimum Rating</label>
+            <div class="slider-wrap">
+              <div class="slider-value" id="ratingValue">⭐ 4.0</div>
+              <input type="range" id="ratingSlider" min="3.0" max="5.0" value="4.0" step="0.1"
+                oninput="updateRating(this.value)" aria-label="Minimum product rating" />
+            </div>
+          </div>
+
+          <!-- CTA -->
+          <button class="btn-primary" id="generateBtn" onclick="generateRoutine()">
+            ✨ Generate My Skincare Routine
+          </button>
+
+          <div style="display:flex; gap:8px; margin-top:12px;">
+            <button class="btn-secondary" style="flex:1" onclick="resetProfile()">Reset</button>
+            <button class="btn-secondary" style="flex:1" onclick="loadQuickProfile('oily_acne')">Quick: Oily+Acne</button>
+            <button class="btn-secondary" style="flex:1" onclick="loadQuickProfile('dry_sensitive')">Quick: Dry+Sensitive</button>
+          </div>
+        </div>
+
+        <!-- Algorithm Info -->
+        <div class="glass-card" style="padding: 20px; margin-top: 16px;">
+          <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px;">Recommendation Architecture</div>
+          <div class="algo-flow" style="padding: 0; justify-content: flex-start; flex-direction: column; gap: 6px;">
+            <div class="algo-step highlight" style="width: 100%; font-size: 12px;">👤 Profile → Vector Embedding</div>
+            <div class="algo-arrow" style="text-align: center; width: 100%; font-size: 12px;">↓</div>
+            <div class="algo-step" style="width: 100%; font-size: 12px;">📐 Cosine Similarity (70%)</div>
+            <div class="algo-arrow" style="text-align: center; width: 100%; font-size: 12px;">↓</div>
+            <div class="algo-step" style="width: 100%; font-size: 12px;">⭐ Bayesian Rating (30%)</div>
+            <div class="algo-arrow" style="text-align: center; width: 100%; font-size: 12px;">↓</div>
+            <div class="algo-step highlight" style="width: 100%; font-size: 12px;">🛡️ Safety Constraint Check</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── Output Panel ────────────────────────────────────────────── -->
+      <div class="output-panel" id="outputPanel">
+
+        <!-- Welcome state -->
+        <div class="glass-card welcome-state" id="welcomeState">
+          <div class="welcome-icon">🧴</div>
+          <div class="welcome-title">Ready to Analyze Your Skin</div>
+          <p class="welcome-desc">Select your skin parameters on the left or click <strong>Simulate AI Scan</strong> to auto-detect your skin metrics and generate your personalized 5-step routine.</p>
+          <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+            <button class="btn-outline" onclick="loadQuickProfile('oily_acne'); generateRoutine()">Try: Oily + Acne Skin</button>
+            <button class="btn-outline" onclick="loadQuickProfile('dry_sensitive'); generateRoutine()">Try: Dry + Sensitive</button>
+            <button class="btn-outline" onclick="loadQuickProfile('anti_aging'); generateRoutine()">Try: Anti-Aging</button>
+          </div>
+        </div>
+
+        <!-- Loading state -->
+        <div class="glass-card loading-overlay hidden" id="loadingState">
+          <div class="loading-spinner"></div>
+          <div class="loading-text">Analyzing skin metrics & matching products...</div>
+        </div>
+
+        <!-- Results state -->
+        <div id="resultsState" class="hidden">
+          <div class="routine-header">
+            <div class="routine-title">Your Personalized Routine</div>
+            <div class="routine-meta" id="routineMeta"></div>
+          </div>
+          <div id="safetyBanner" class="safety-banner"></div>
+          <div id="routineSteps"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- PAGE: METRICS                                                            -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div id="page-metrics" class="page-section">
+  <div class="main-layout" style="padding-top: 100px;">
+    <div style="margin-bottom: 32px;">
+      <h2 style="font-family:'Space Grotesk',sans-serif; font-size:32px; font-weight:800; margin-bottom:8px;">Evaluation Metrics</h2>
+      <p style="color:var(--text-secondary); font-size:15px;">Real-time performance metrics across all test case profiles.</p>
+    </div>
+
+    <!-- Key Metrics Cards -->
+    <div class="metrics-grid" id="metricsGrid">
+      <div class="glass-card metric-card">
+        <div class="metric-value" id="metric-precision">—</div>
+        <div class="metric-label">Precision@5</div>
+        <div class="metric-desc">Fraction of top-5 recommendations relevant to user profile (threshold: 60% match).</div>
+      </div>
+      <div class="glass-card metric-card">
+        <div class="metric-value" id="metric-recall">—</div>
+        <div class="metric-label">Recall@5</div>
+        <div class="metric-desc">Fraction of all relevant products surfaced in top-5.</div>
+      </div>
+      <div class="glass-card metric-card">
+        <div class="metric-value" id="metric-ndcg">—</div>
+        <div class="metric-label">NDCG@5</div>
+        <div class="metric-desc">Normalized Discounted Cumulative Gain — measures ranking quality.</div>
+      </div>
+      <div class="glass-card metric-card">
+        <div class="metric-value" id="metric-latency">—</div>
+        <div class="metric-label">Avg Latency</div>
+        <div class="metric-desc">Average recommendation generation time in milliseconds.</div>
+      </div>
+      <div class="glass-card metric-card">
+        <div class="metric-value" id="metric-coverage">—</div>
+        <div class="metric-label">Coverage</div>
+        <div class="metric-desc">% of total product catalog surfaced across test profiles.</div>
+      </div>
+      <div class="glass-card metric-card">
+        <div class="metric-value" id="metric-safety">100%</div>
+        <div class="metric-label">Safety Pass Rate</div>
+        <div class="metric-desc">% of routines passing ingredient conflict safety checks.</div>
+      </div>
+    </div>
+
+    <!-- Precision Bar Chart -->
+    <div class="glass-card chart-container">
+      <div class="chart-title">Precision@5 by Test Profile</div>
+      <div class="bar-chart" id="precisionChart"></div>
+    </div>
+
+    <div style="text-align: center; margin-top: 24px;">
+      <button class="btn-primary" style="width: auto; padding: 14px 40px;" onclick="runMetricsBenchmark()">
+        ▶ Run Live Benchmark
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- PAGE: TEST CASES                                                         -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div id="page-testcases" class="page-section">
+  <div class="main-layout" style="padding-top: 100px;">
+    <div style="margin-bottom: 32px;">
+      <h2 style="font-family:'Space Grotesk',sans-serif; font-size:32px; font-weight:800; margin-bottom:8px;">Test Cases</h2>
+      <p style="color:var(--text-secondary); font-size:15px;">Click any test case to run it live in the engine.</p>
+    </div>
+
+    <div class="test-cases-grid" id="testCasesGrid"></div>
+
+    <div class="glass-card" style="padding: 28px;" id="testResultArea">
+      <div style="text-align:center; color: var(--text-muted); padding: 40px;">
+        <div style="font-size:40px; margin-bottom:12px;">🧪</div>
+        <div style="font-size:15px;">Click a test case above to run it and view results here.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- PAGE: BENCHMARK                                                          -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div id="page-benchmark" class="page-section">
+  <div class="main-layout" style="padding-top: 100px;">
+    <div style="margin-bottom: 32px;">
+      <h2 style="font-family:'Space Grotesk',sans-serif; font-size:32px; font-weight:800; margin-bottom:8px;">Orbo.ai Benchmark</h2>
+      <p style="color:var(--text-secondary); font-size:15px;">Comparing our system to Orbo.ai's production recommendation platform.</p>
+    </div>
+
+    <div class="glass-card" style="padding: 0; overflow: hidden; margin-bottom: 24px;">
+      <div style="padding: 24px 28px; border-bottom: 1px solid var(--border-glass);">
+        <div style="font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:700;">Feature Comparison Matrix</div>
+      </div>
+      <div style="overflow-x: auto;">
+        <table class="benchmark-table">
+          <thead>
+            <tr>
+              <th>Feature / Dimension</th>
+              <th class="compare-col-header ours">🤖 BeautyAI (Ours)</th>
+              <th class="compare-col-header" style="color: var(--rose) !important;">💄 Orbo.ai</th>
+              <th class="compare-col-header" style="color: var(--mint) !important;">🛍️ Nykaa</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Recommendation Type</strong></td>
+              <td>Hybrid (Content + Collaborative)</td>
+              <td>LLM + Computer Vision + Content</td>
+              <td>Collaborative Filtering</td>
+            </tr>
+            <tr>
+              <td><strong>Skin Type Detection</strong></td>
+              <td><span class="benchmark-check">✓</span> Form + AI Scanner Simulator</td>
+              <td><span class="benchmark-check">✓</span> Live Camera AI Scan</td>
+              <td><span class="benchmark-partial">~</span> Manual quiz</td>
+            </tr>
+            <tr>
+              <td><strong>Ingredient Safety Check</strong></td>
+              <td><span class="benchmark-check">✓</span> Rule-based validator</td>
+              <td><span class="benchmark-check">✓</span> Dermatologist DB</td>
+              <td><span class="benchmark-cross">✗</span></td>
+            </tr>
+            <tr>
+              <td><strong>Score Explainability</strong></td>
+              <td><span class="benchmark-check">✓</span> Full Breakdown Modal</td>
+              <td><span class="benchmark-partial">~</span> Partial in BeautyGPT</td>
+              <td><span class="benchmark-cross">✗</span></td>
+            </tr>
+            <tr>
+              <td><strong>Routine Builder (5-step)</strong></td>
+              <td><span class="benchmark-check">✓</span> Automated</td>
+              <td><span class="benchmark-check">✓</span> AI-personalized</td>
+              <td><span class="benchmark-partial">~</span> Editorial only</td>
+            </tr>
+            <tr>
+              <td><strong>Evaluation Dashboard</strong></td>
+              <td><span class="benchmark-check">✓</span> Precision, Recall, NDCG</td>
+              <td><span class="benchmark-cross">✗</span> Internal only</td>
+              <td><span class="benchmark-cross">✗</span></td>
+            </tr>
+            <tr>
+              <td><strong>Latency</strong></td>
+              <td><span class="benchmark-check">✓</span> &lt;2ms (client-side)</td>
+              <td><span class="benchmark-partial">~</span> 200–500ms</td>
+              <td><span class="benchmark-partial">~</span> 300–800ms</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Floating BeautyGPT AI Assistant Button & Modal ─────────────────── -->
+<button class="beauty-gpt-fab" onclick="toggleGptModal()">
+  💬 Ask BeautyGPT
+</button>
+
+<div class="gpt-modal hidden" id="gptModal">
+  <div class="gpt-modal-header">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span style="font-size:18px;">✨</span>
+      <span style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:15px;">BeautyGPT Advisor</span>
+    </div>
+    <button class="modal-close" style="width:24px;height:24px;font-size:12px;" onclick="toggleGptModal()">✕</button>
+  </div>
+  <div class="gpt-messages" id="gptMessages">
+    <div class="gpt-msg bot">
+      Hi! I'm your AI Beauty Advisor. Ask me anything about skincare products, ingredient safety, or routine steps!
+    </div>
+  </div>
+  <div class="gpt-input-row">
+    <input type="text" class="gpt-input" id="gptInput" placeholder="Ask about acne, retinol, sunscreen..." onkeypress="handleGptKey(event)" />
+    <button class="btn-primary" style="width:auto; padding:8px 16px; font-size:12px;" onclick="sendGptMsg()">Send</button>
+  </div>
+</div>
+
+<!-- ─── Explainability Modal ────────────────────────────────────────────── -->
+<div class="modal-overlay hidden" id="explainModal" onclick="closeModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Why Recommended?</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<footer class="footer">
+  <p>BeautyAI — Personalized Skincare Recommendation Engine</p>
+  <p style="margin-top: 6px;">Technical Assignment Submission · Inspired by <a href="https://orbo.ai" target="_blank">Orbo.ai</a></p>
+</footer>
+
+<script src="recommendation_engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
