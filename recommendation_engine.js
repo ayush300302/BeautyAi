@@ -1,61 +1,63 @@
 /**
- * Skincare Recommendation Engine
- * Hybrid Algorithm: Content-Based Cosine Similarity + Bayesian Rating Weight + Safety Constraints
+ * Skincare Recommendation Engine — BeautyAI Core
+ * Algorithm: Hybrid Content-Based Filtering (Cosine Similarity + Bayesian Rating)
+ * Rule-Based Ingredient Safety Validator
+ * Independent Attribute-Based Offline Evaluation Suite (Precision, Recall, NDCG, Coverage, Diversity, Latency, Safety)
  * Orbo.ai Inspired - Technical Assignment Submission
  */
 
 class RecommendationEngine {
   constructor(products) {
-    this.products = products;
+    this.products = products || [];
     this.allIngredients = this._buildIngredientVocab();
     this.allConcerns = this._buildConcernVocab();
     this.allSkinTypes = ['oily', 'dry', 'combination', 'sensitive', 'normal', 'acne_prone'];
     this.productVectors = this._vectorizeAllProducts();
   }
 
-  // ─── Vocabulary Builders ─────────────────────────────────────────────────────
+  // ─── Dynamic Vocabulary Builders ──────────────────────────────────────────────
 
   _buildIngredientVocab() {
     const set = new Set();
-    this.products.forEach(p => p.active_ingredients.forEach(i => set.add(i)));
+    this.products.forEach(p => (p.active_ingredients || []).forEach(i => set.add(i)));
     return Array.from(set);
   }
 
   _buildConcernVocab() {
     const set = new Set();
-    this.products.forEach(p => p.concerns.forEach(c => set.add(c)));
+    this.products.forEach(p => (p.concerns || []).forEach(c => set.add(c)));
     return Array.from(set);
   }
 
-  // ─── Feature Vectorization ────────────────────────────────────────────────────
+  // ─── Dynamic Feature Vectorization ───────────────────────────────────────────
 
   /**
-   * Converts a product into a normalized numeric feature vector.
-   * Vector = [skinType flags (6), concern flags (N), ingredient flags (M), normalizedRating, normalizedPrice]
+   * Vectorizes a product into the dynamic feature space derived from dataset vocabularies.
+   * Feature dimensions: [SkinTypes (6), Concerns (N), Ingredients (M), NormalizedRating (1), NormalizedPrice (1)]
    */
   _vectorizeProduct(product) {
     const vector = [];
 
-    // Skin type features (binary: 0 or 1)
+    // Skin type binary flags
     this.allSkinTypes.forEach(st => {
-      vector.push(product.skin_types.includes(st) ? 1 : 0);
+      vector.push(product.skin_types?.includes(st) ? 1 : 0);
     });
 
-    // Concern features (binary: 0 or 1)
+    // Concern binary flags
     this.allConcerns.forEach(c => {
-      vector.push(product.concerns.includes(c) ? 1 : 0);
+      vector.push(product.concerns?.includes(c) ? 1 : 0);
     });
 
-    // Ingredient features (binary: 0 or 1)
+    // Ingredient binary flags
     this.allIngredients.forEach(ing => {
-      vector.push(product.active_ingredients.includes(ing) ? 1 : 0);
+      vector.push(product.active_ingredients?.includes(ing) ? 1 : 0);
     });
 
-    // Normalized rating (0–1)
-    vector.push(product.rating / 5.0);
+    // Normalized rating (0–1 scale)
+    vector.push((product.rating || 0) / 5.0);
 
-    // Normalized price (log scale, capped at 200)
-    vector.push(Math.min(product.price, 200) / 200);
+    // Normalized price (0–1 scale capped at $200)
+    vector.push(Math.min(product.price || 0, 200) / 200);
 
     return vector;
   }
@@ -69,37 +71,37 @@ class RecommendationEngine {
   }
 
   /**
-   * Converts a user profile into a feature vector matching product vector space.
+   * Vectorizes user profile into the exact same feature vector space.
    */
   _vectorizeUserProfile(userProfile) {
     const vector = [];
 
-    // Skin type features
+    // Skin type flags
     this.allSkinTypes.forEach(st => {
-      vector.push(userProfile.skin_types.includes(st) ? 1 : 0);
+      vector.push(userProfile.skin_types?.includes(st) ? 1 : 0);
     });
 
-    // Concern features
+    // Concern flags
     this.allConcerns.forEach(c => {
-      vector.push(userProfile.concerns.includes(c) ? 1 : 0);
+      vector.push(userProfile.concerns?.includes(c) ? 1 : 0);
     });
 
-    // Ingredient features (preferred ingredients)
+    // Preferred ingredient flags
     this.allIngredients.forEach(ing => {
-      vector.push(userProfile.preferred_ingredients && userProfile.preferred_ingredients.includes(ing) ? 1 : 0);
+      vector.push(userProfile.preferred_ingredients?.includes(ing) ? 1 : 0);
     });
 
-    // Target rating preference (normalized)
+    // Minimum target rating (normalized)
     vector.push((userProfile.min_rating || 4.0) / 5.0);
 
-    // Target price preference (normalized)
+    // Maximum budget target (normalized)
     const maxBudget = userProfile.max_price || 100;
     vector.push(Math.min(maxBudget, 200) / 200);
 
     return vector;
   }
 
-  // ─── Cosine Similarity ────────────────────────────────────────────────────────
+  // ─── Vector Cosine Similarity ──────────────────────────────────────────────────
 
   _dotProduct(a, b) {
     return a.reduce((sum, val, i) => sum + val * b[i], 0);
@@ -110,6 +112,7 @@ class RecommendationEngine {
   }
 
   cosineSimilarity(vecA, vecB) {
+    if (!vecA || !vecB) return 0;
     const dot = this._dotProduct(vecA, vecB);
     const magA = this._magnitude(vecA);
     const magB = this._magnitude(vecB);
@@ -117,25 +120,25 @@ class RecommendationEngine {
     return dot / (magA * magB);
   }
 
-  // ─── Bayesian Rating Weight ────────────────────────────────────────────────────
+  // ─── Bayesian Weighted Rating ──────────────────────────────────────────────────
 
   /**
-   * Bayesian Average = (C × m + Σ ratings) / (C + n)
-   * C = confidence weight (minimum vote count = 1000)
-   * m = global mean rating
+   * Bayesian Adjusted Rating = (C * m + n * r) / (C + n)
+   * C = 1000 (confidence smoothing parameter)
+   * m = 4.5 (global mean rating threshold)
    */
   _bayesianRating(product) {
     const C = 1000;
     const globalMean = 4.5;
-    const n = product.rating_count;
-    const avgRating = product.rating;
-    return ((C * globalMean) + (n * avgRating)) / (C + n);
+    const n = product.rating_count || 0;
+    const r = product.rating || 0;
+    return ((C * globalMean) + (n * r)) / (C + n);
   }
 
   // ─── Safety Constraint Validator ──────────────────────────────────────────────
 
   /**
-   * Returns true if the combination of products in a routine has no unsafe ingredient conflicts.
+   * Deterministically validates routine ingredient combinations against contraindications.
    */
   _checkIngredientSafety(selectedProducts) {
     const conflicts = {
@@ -150,74 +153,69 @@ class RecommendationEngine {
     const allContraindications = new Set();
 
     selectedProducts.forEach(p => {
-      p.active_ingredients.forEach(i => allIngredients.add(i));
-      p.contraindications.forEach(c => allContraindications.add(c));
+      (p.active_ingredients || []).forEach(i => allIngredients.add(i));
+      (p.contraindications || []).forEach(c => allContraindications.add(c));
     });
 
-    // Check direct conflicts from contraindications
+    // Check direct product contraindications
     allIngredients.forEach(ing => {
       if (allContraindications.has(ing)) {
-        warnings.push(`⚠️ Conflict detected: "${ing}" conflicts with another product in this routine.`);
+        warnings.push(`Conflict: Ingredient "${ing.replace(/_/g, ' ')}" is contraindicated by another product in this routine.`);
       }
     });
 
-    // Check known conflict pairs
+    // Check known active ingredient pair conflicts
     allIngredients.forEach(ing => {
       if (conflicts[ing]) {
         conflicts[ing].forEach(conflict => {
           if (allIngredients.has(conflict)) {
-            warnings.push(`⚠️ Do not use ${ing} + ${conflict} in the same routine step.`);
+            warnings.push(`Do not combine active "${ing.replace(/_/g, ' ')}" with "${conflict.replace(/_/g, ' ')}" in the same routine step.`);
           }
         });
       }
     });
 
-    return { safe: warnings.length === 0, warnings: [...new Set(warnings)] };
+    return { safe: warnings.length === 0, warnings: Array.from(new Set(warnings)) };
   }
 
-  // ─── Score Explainability Breakdown ───────────────────────────────────────────
+  // ─── Attribute-Based Score Explanation ─────────────────────────────────────────
 
   /**
-   * Breaks down the recommendation score into interpretable components.
+   * Generates interpretable score component breakdown based on real product & user attributes.
    */
   _explainScore(product, userProfile) {
-    // Skin Type Match Score (0-100)
-    const skinTypeMatches = userProfile.skin_types.filter(st => product.skin_types.includes(st));
-    const skinTypeScore = Math.round((skinTypeMatches.length / userProfile.skin_types.length) * 100);
-
-    // Concern Match Score (0-100)
-    const concernMatches = userProfile.concerns.filter(c => product.concerns.includes(c));
-    const concernScore = userProfile.concerns.length > 0
-      ? Math.round((concernMatches.length / userProfile.concerns.length) * 100)
-      : 0;
-
-    // Ingredient Compatibility Score (0-100)
+    const userTypes = userProfile.skin_types || [];
+    const userConcerns = userProfile.concerns || [];
     const preferredIng = userProfile.preferred_ingredients || [];
-    const ingMatches = preferredIng.filter(i => product.active_ingredients.includes(i));
+
+    // Skin type match (0-100)
+    const skinTypeMatches = userTypes.filter(st => product.skin_types?.includes(st));
+    const skinTypeScore = userTypes.length > 0
+      ? Math.round((skinTypeMatches.length / userTypes.length) * 100)
+      : 100;
+
+    // Concern match (0-100)
+    const concernMatches = userConcerns.filter(c => product.concerns?.includes(c));
+    const concernScore = userConcerns.length > 0
+      ? Math.round((concernMatches.length / userConcerns.length) * 100)
+      : 50;
+
+    // Ingredient synergy (0-100)
+    const ingMatches = preferredIng.filter(i => product.active_ingredients?.includes(i));
     const ingredientScore = preferredIng.length > 0
       ? Math.round((ingMatches.length / preferredIng.length) * 100)
-      : 50; // neutral if no preference given
+      : 50;
 
-    // Rating Score (0-100)
-    const ratingScore = Math.round((product.rating / 5.0) * 100);
+    // Rating score (0-100)
+    const ratingScore = Math.round(((product.rating || 0) / 5.0) * 100);
 
-    // Budget Score (0-100): how well it fits within budget
+    // Budget fit (0-100)
     const maxBudget = userProfile.max_price || 999;
     const budgetScore = product.price <= maxBudget
-      ? Math.round(100 - ((product.price / maxBudget) * 30)) // slight preference for lower prices
+      ? Math.round(100 - ((product.price / maxBudget) * 20))
       : 0;
 
-    // Weighted composite score
-    const composite = (
-      (concernScore * 0.35) +
-      (skinTypeScore * 0.25) +
-      (ingredientScore * 0.20) +
-      (ratingScore * 0.12) +
-      (budgetScore * 0.08)
-    );
-
     return {
-      total: Math.round(Math.min(composite, 100)),
       breakdown: {
         concern_match: { score: concernScore, weight: '35%', matched: concernMatches },
         skin_type_match: { score: skinTypeScore, weight: '25%', matched: skinTypeMatches },
@@ -228,65 +226,71 @@ class RecommendationEngine {
     };
   }
 
-  // ─── Core Recommendation Function ─────────────────────────────────────────────
+  // ─── Main Recommendation Function ──────────────────────────────────────────────
 
   /**
-   * Main recommendation function.
-   * @param {Object} userProfile - { skin_types, concerns, preferred_ingredients, max_price, min_rating }
-   * @param {String} category - Filter to a specific product category (optional)
-   * @param {Number} topK - Number of top recommendations to return
-   * @returns {Array} Ranked list of recommendations with scores and explanations
+   * Main recommendation pipeline:
+   * Candidates -> Candidate Filtering -> Cosine Similarity (70%) + Bayesian Rating (30%) -> Final Score Sorting -> Top-K
    */
   recommend(userProfile, category = null, topK = 5) {
     const startTime = performance.now();
 
-    // Filter by category if specified
-    let candidates = category
-      ? this.products.filter(p => p.category === category)
-      : this.products;
+    let candidates = this.products;
 
-    // Filter by budget
+    // Category filter
+    if (category) {
+      candidates = candidates.filter(p => p.category === category);
+    }
+
+    // Budget filter
     if (userProfile.max_price) {
       candidates = candidates.filter(p => p.price <= userProfile.max_price);
     }
 
-    // Filter by minimum rating
+    // Rating filter
     if (userProfile.min_rating) {
       candidates = candidates.filter(p => p.rating >= userProfile.min_rating);
     }
 
-    // Handle cold start (no user data) - return highest bayesian rated items
+    // Cold start fallback if no user profile attributes provided
     if (!userProfile.skin_types || userProfile.skin_types.length === 0) {
       return this._coldStartRecommendations(candidates, topK, startTime);
     }
 
     const userVector = this._vectorizeUserProfile(userProfile);
 
-    // Score all candidates
+    // Compute canonical ranking score for all candidates
     const scored = candidates.map(product => {
       const productVector = this.productVectors[product.id];
       const cosineSim = this.cosineSimilarity(userVector, productVector);
       const bayesRating = this._bayesianRating(product);
-      const bayesNorm = (bayesRating - 4.0) / 1.0; // Normalize around 4.0
+      
+      // Normalized Bayesian Rating (scale 0 to 1 based on 4.0 - 5.0 range)
+      const bayesNorm = Math.max(0, Math.min(1, (bayesRating - 4.0) / 1.0));
 
-      // Hybrid score: 70% content similarity + 30% bayesian rating
-      const hybridScore = (cosineSim * 0.70) + (Math.max(0, bayesNorm) * 0.30);
+      // CANONICAL HYBRID RANKING FORMULA:
+      // final_score = 0.70 * Cosine_Similarity + 0.30 * Normalized_Bayesian_Rating
+      const finalScore = parseFloat(((cosineSim * 0.70) + (bayesNorm * 0.30)).toFixed(4));
+      
+      // Match percentage displayed in UI (0-100%)
+      const matchScore = Math.min(100, Math.max(0, Math.round(finalScore * 100)));
 
       const explanation = this._explainScore(product, userProfile);
 
       return {
         product,
-        hybrid_score: hybridScore,
+        final_score: finalScore,
+        hybrid_score: finalScore,
         cosine_similarity: parseFloat(cosineSim.toFixed(4)),
         bayesian_rating: parseFloat(bayesRating.toFixed(3)),
-        match_score: explanation.total,
+        match_score: matchScore,
         explanation: explanation.breakdown,
-        is_safe: true // default; safety check done at routine level
+        is_safe: true
       };
     });
 
-    // Sort by match score (explanation-based, more interpretable)
-    scored.sort((a, b) => b.match_score - a.match_score);
+    // STRICT CANONICAL SORTING BY final_score
+    scored.sort((a, b) => b.final_score - a.final_score);
 
     const endTime = performance.now();
     const latency = parseFloat((endTime - startTime).toFixed(2));
@@ -296,18 +300,15 @@ class RecommendationEngine {
       metadata: {
         latency_ms: latency,
         candidates_evaluated: candidates.length,
-        algorithm: 'Hybrid: Cosine Similarity (70%) + Bayesian Rating (30%)',
+        algorithm: 'Hybrid Content-Based: Cosine Similarity (70%) + Bayesian Rating (30%)',
         user_profile: userProfile,
         category_filter: category
       }
     };
   }
 
-  // ─── Full Routine Builder ─────────────────────────────────────────────────────
+  // ─── 5-Step Routine Builder ───────────────────────────────────────────────────
 
-  /**
-   * Builds a complete personalized skincare routine (5 steps) with safety validation.
-   */
   buildRoutine(userProfile) {
     const startTime = performance.now();
 
@@ -336,9 +337,7 @@ class RecommendationEngine {
       }
     });
 
-    // Safety check for the full routine
     const safetyCheck = this._checkIngredientSafety(selectedProducts);
-
     const endTime = performance.now();
 
     return {
@@ -349,18 +348,24 @@ class RecommendationEngine {
     };
   }
 
-  // ─── Cold Start Handling ──────────────────────────────────────────────────────
+  // ─── Cold Start Recommendations ──────────────────────────────────────────────
 
   _coldStartRecommendations(candidates, topK, startTime) {
-    const scored = candidates.map(p => ({
-      product: p,
-      hybrid_score: this._bayesianRating(p) / 5.0,
-      cosine_similarity: 0,
-      bayesian_rating: this._bayesianRating(p),
-      match_score: Math.round(this._bayesianRating(p) * 20),
-      explanation: { note: 'Cold start: recommendations based on top-rated products' },
-      is_cold_start: true
-    }));
+    const scored = candidates.map(p => {
+      const bayesRating = this._bayesianRating(p);
+      const bayesNorm = Math.max(0, Math.min(1, (bayesRating - 4.0) / 1.0));
+      const finalScore = parseFloat((bayesNorm * 0.30).toFixed(4));
+      return {
+        product: p,
+        final_score: finalScore,
+        hybrid_score: finalScore,
+        cosine_similarity: 0.0,
+        bayesian_rating: parseFloat(bayesRating.toFixed(3)),
+        match_score: Math.round(bayesRating * 20),
+        explanation: { note: 'Cold start: recommendations based on top Bayesian-rated products' },
+        is_cold_start: true
+      };
+    });
 
     scored.sort((a, b) => b.bayesian_rating - a.bayesian_rating);
 
@@ -371,91 +376,194 @@ class RecommendationEngine {
         latency_ms: parseFloat((endTime - startTime).toFixed(2)),
         candidates_evaluated: candidates.length,
         algorithm: 'Cold Start: Bayesian Rating Fallback',
-        note: 'No user profile provided. Showing top-rated products.'
+        note: 'No user profile attributes provided. Showing top Bayesian-rated products.'
       }
     };
   }
 
-  // ─── Evaluation Metrics ───────────────────────────────────────────────────────
+  // ─── INDEPENDENT GROUND TRUTH RELEVANCE HEURISTIC (NON-CIRCULAR) ──────────────
 
   /**
-   * Computes Precision@K: fraction of top-K recommended items that are relevant.
-   * Relevance = match_score >= threshold (default: 60%)
+   * Deterministic Ground-Truth Relevance Function R(u, p) in {0, 1, 2, 3}.
+   * Calculated purely from product attributes vs user profile.
+   * Completely independent of the recommendation system's final_score!
+   *
+   * Relevance scale:
+   * 3 = Highly Relevant (Matches skin type AND primary concern AND preferred ingredient)
+   * 2 = Relevant (Matches skin type AND primary concern)
+   * 1 = Weakly Relevant (Matches skin type OR primary concern)
+   * 0 = Not Relevant (No skin type or concern match)
    */
-  precisionAtK(recommendations, k = 5, threshold = 60) {
+  groundTruthRelevance(userProfile, product) {
+    const userTypes = userProfile.skin_types || [];
+    const userConcerns = userProfile.concerns || [];
+    const preferredIng = userProfile.preferred_ingredients || [];
+
+    const stMatch = userTypes.some(st => product.skin_types?.includes(st));
+    const cMatch = userConcerns.some(c => product.concerns?.includes(c));
+    const ingMatch = preferredIng.some(ing => product.active_ingredients?.includes(ing));
+
+    if (stMatch && cMatch && ingMatch) return 3;
+    if (stMatch && cMatch) return 2;
+    if (stMatch || cMatch) return 1;
+    return 0;
+  }
+
+  // ─── REAL OFFLINE EVALUATION METRICS ENGINE ───────────────────────────────────
+
+  /**
+   * Computes Precision@K = (Relevant items in top-K) / K
+   * Relevant threshold: ground truth relevance R(u, p) >= 2
+   */
+  precisionAtK(userProfile, recommendations, k = 5) {
+    if (!recommendations || recommendations.length === 0 || k <= 0) return 0;
     const topK = recommendations.slice(0, k);
-    const relevant = topK.filter(r => r.match_score >= threshold);
-    return parseFloat((relevant.length / k).toFixed(3));
+    const relevantCount = topK.filter(r => this.groundTruthRelevance(userProfile, r.product) >= 2).length;
+    return parseFloat((relevantCount / k).toFixed(3));
   }
 
   /**
-   * Computes Recall@K: fraction of all relevant items that appear in top-K.
-   * Relevant ground truth = all products matching ≥ 2 skin type/concern attributes
+   * Computes Recall@K = (Relevant items in top-K) / (Total relevant products in catalog for profile)
    */
-  recallAtK(userProfile, recommendations, k = 5, threshold = 60) {
+  recallAtK(userProfile, recommendations, k = 5) {
+    if (!recommendations || recommendations.length === 0) return 0;
+
+    const totalRelevantInCatalog = this.products.filter(p => this.groundTruthRelevance(userProfile, p) >= 2).length;
+    if (totalRelevantInCatalog === 0) return 0; // Return 0.0 for zero relevant items in catalog
+
     const topK = recommendations.slice(0, k);
-    const relevantInTopK = topK.filter(r => r.match_score >= threshold).length;
-    const allRelevant = this.products.filter(p => {
-      const stMatch = p.skin_types.some(st => userProfile.skin_types?.includes(st));
-      const cMatch = p.concerns.some(c => userProfile.concerns?.includes(c));
-      return stMatch && cMatch;
-    }).length;
-    return allRelevant > 0 ? parseFloat((relevantInTopK / allRelevant).toFixed(3)) : 0;
+    const relevantInTopK = topK.filter(r => this.groundTruthRelevance(userProfile, r.product) >= 2).length;
+    return parseFloat((relevantInTopK / totalRelevantInCatalog).toFixed(3));
   }
 
   /**
-   * Computes Normalized Discounted Cumulative Gain (NDCG@K).
+   * Computes position-sensitive NDCG@K using independent ground-truth relevance R(u, p).
+   * DCG@K = sum_{i=1}^K (2^(R_i) - 1) / log2(i + 1)
+   * IDCG@K = Ideal DCG from sorting catalog products by R(u, p) descending.
    */
-  ndcgAtK(recommendations, k = 5) {
+  ndcgAtK(userProfile, recommendations, k = 5) {
+    if (!recommendations || recommendations.length === 0 || k <= 0) return 0;
     const topK = recommendations.slice(0, k);
 
-    // DCG: higher-ranked relevant items gain more credit
+    // Compute DCG@K
     const dcg = topK.reduce((sum, rec, i) => {
-      const relevance = rec.match_score / 100; // normalize to 0-1
-      return sum + relevance / Math.log2(i + 2); // log2(rank+1)
+      const rel = this.groundTruthRelevance(userProfile, rec.product);
+      return sum + ((Math.pow(2, rel) - 1) / Math.log2(i + 2)); // i + 2 since i is 0-indexed (rank 1 -> log2(2))
     }, 0);
 
-    // Ideal DCG: sorted by perfect scores
-    const idealScores = topK.map(r => r.match_score / 100).sort((a, b) => b - a);
-    const idcg = idealScores.reduce((sum, rel, i) => {
-      return sum + rel / Math.log2(i + 2);
+    // Compute Ideal DCG@K by sorting all catalog candidates by ground truth relevance
+    const idealRelevances = this.products
+      .map(p => this.groundTruthRelevance(userProfile, p))
+      .sort((a, b) => b - a)
+      .slice(0, k);
+
+    const idcg = idealRelevances.reduce((sum, rel, i) => {
+      return sum + ((Math.pow(2, rel) - 1) / Math.log2(i + 2));
     }, 0);
 
-    return idcg > 0 ? parseFloat((dcg / idcg).toFixed(3)) : 0;
+    if (idcg === 0) return 0;
+    return parseFloat((dcg / idcg).toFixed(3));
   }
 
   /**
-   * Computes Catalog Coverage: % of distinct products recommended across all test profiles
+   * Computes Catalog Coverage: % of total catalog surfaced across an evaluation suite
    */
-  catalogCoverage(testProfiles) {
+  catalogCoverage(testProfiles, k = 5) {
+    if (!testProfiles || testProfiles.length === 0 || this.products.length === 0) return 0;
     const recommended = new Set();
     testProfiles.forEach(profile => {
-      const result = this.recommend(profile, null, 5);
+      const result = this.recommend(profile, null, k);
       result.recommendations.forEach(r => recommended.add(r.product.id));
     });
     return parseFloat(((recommended.size / this.products.length) * 100).toFixed(1));
   }
 
   /**
-   * Runs all metrics for a given user profile and recommendation results.
+   * Computes Category Diversity: ratio of unique categories present in top-K recommendations
    */
-  evaluateAll(userProfile, recommendations, k = 5) {
-    const recs = recommendations.recommendations || recommendations;
-    return {
-      precision_at_k: this.precisionAtK(recs, k),
-      recall_at_k: this.recallAtK(userProfile, recs, k),
-      ndcg_at_k: this.ndcgAtK(recs, k),
-      k: k
+  categoryDiversity(recommendations, k = 5) {
+    if (!recommendations || recommendations.length === 0 || k <= 0) return 0;
+    const topK = recommendations.slice(0, k);
+    const categories = new Set(topK.map(r => r.product.category));
+    return parseFloat((categories.size / topK.length).toFixed(3));
+  }
+
+  /**
+   * Runs complete multi-K evaluation across an array of evaluation profiles.
+   */
+  evaluateSuite(testProfiles) {
+    const ks = [3, 5, 10];
+    const metrics = {
+      precision: { 3: 0, 5: 0, 10: 0 },
+      recall: { 3: 0, 5: 0, 10: 0 },
+      ndcg: { 3: 0, 5: 0, 10: 0 },
+      diversity: { 5: 0 },
+      latencies: [],
+      safetyCompliance: 0,
+      totalProfiles: testProfiles.length
     };
+
+    let safeRoutines = 0;
+
+    testProfiles.forEach(profile => {
+      const start = performance.now();
+      const routineRes = this.buildRoutine(profile);
+      const end = performance.now();
+      metrics.latencies.push(end - start);
+
+      if (routineRes.safety.safe) safeRoutines++;
+
+      const recResult = this.recommend(profile, null, 10);
+      const recs = recResult.recommendations;
+
+      ks.forEach(k => {
+        metrics.precision[k] += this.precisionAtK(profile, recs, k);
+        metrics.recall[k] += this.recallAtK(profile, recs, k);
+        metrics.ndcg[k] += this.ndcgAtK(profile, recs, k);
+      });
+
+      metrics.diversity[5] += this.categoryDiversity(recs, 5);
+    });
+
+    const n = testProfiles.length;
+    const latencies = metrics.latencies.sort((a, b) => a - b);
+
+    const summary = {
+      precision: {
+        3: parseFloat((metrics.precision[3] / n).toFixed(3)),
+        5: parseFloat((metrics.precision[5] / n).toFixed(3)),
+        10: parseFloat((metrics.precision[10] / n).toFixed(3))
+      },
+      recall: {
+        3: parseFloat((metrics.recall[3] / n).toFixed(3)),
+        5: parseFloat((metrics.recall[5] / n).toFixed(3)),
+        10: parseFloat((metrics.recall[10] / n).toFixed(3))
+      },
+      ndcg: {
+        3: parseFloat((metrics.ndcg[3] / n).toFixed(3)),
+        5: parseFloat((metrics.ndcg[5] / n).toFixed(3)),
+        10: parseFloat((metrics.ndcg[10] / n).toFixed(3))
+      },
+      coverage: this.catalogCoverage(testProfiles, 5),
+      diversity: parseFloat((metrics.diversity[5] / n).toFixed(3)),
+      latency: {
+        avg: parseFloat((latencies.reduce((a, b) => a + b, 0) / n).toFixed(1)),
+        min: parseFloat((latencies[0] || 0).toFixed(1)),
+        max: parseFloat((latencies[latencies.length - 1] || 0).toFixed(1))
+      },
+      safety_compliance_pct: parseFloat(((safeRoutines / n) * 100).toFixed(1))
+    };
+
+    return summary;
   }
 }
 
-// ─── Predefined Test Cases ─────────────────────────────────────────────────────
+// ─── Evaluation Test Profiles Suite ───────────────────────────────────────────
 
 const TEST_CASES = {
   success_1: {
     name: '✅ Success: Oily + Acne-Prone Skin',
-    description: 'Standard use case: clear input profile for oily, acne-prone skin with budget constraints.',
+    description: 'Standard use case: oily, acne-prone profile with budget cap ($40).',
     profile: {
       skin_types: ['oily', 'acne_prone'],
       concerns: ['acne', 'oiliness', 'pores'],
@@ -466,7 +574,7 @@ const TEST_CASES = {
   },
   success_2: {
     name: '✅ Success: Dry + Sensitive Skin (Anti-Aging)',
-    description: 'Dry, sensitive skin profile with anti-aging and hydration priorities.',
+    description: 'Dry, sensitive skin profile targeting hydration & barrier repair.',
     profile: {
       skin_types: ['dry', 'sensitive'],
       concerns: ['dryness', 'aging', 'sensitivity'],
@@ -476,8 +584,8 @@ const TEST_CASES = {
     }
   },
   success_3: {
-    name: '✅ Success: Normal + Hyperpigmentation Focus',
-    description: 'Normal skin type focused on brightening and anti-pigmentation treatments.',
+    name: '✅ Success: Normal + Hyperpigmentation',
+    description: 'Normal skin focused on brightening & tone evening.',
     profile: {
       skin_types: ['normal', 'combination'],
       concerns: ['hyperpigmentation', 'dullness', 'uneven_texture'],
@@ -488,7 +596,7 @@ const TEST_CASES = {
   },
   edge_cold_start: {
     name: '⚠️ Edge Case: Cold Start (No Profile)',
-    description: 'New user with no skin type or concern data. System falls back to Bayesian ranking.',
+    description: 'Cold start profile with zero skin attributes specified.',
     profile: {
       skin_types: [],
       concerns: [],
@@ -499,7 +607,7 @@ const TEST_CASES = {
   },
   edge_conflict: {
     name: '⚠️ Edge Case: Conflicting Ingredient Needs',
-    description: 'User wants both retinol (anti-aging) and vitamin C + AHAs – triggers safety warning.',
+    description: 'Profile requesting retinol + vitamin C + AHA in same routine (triggers safety rule).',
     profile: {
       skin_types: ['combination'],
       concerns: ['aging', 'acne', 'hyperpigmentation'],
@@ -509,8 +617,8 @@ const TEST_CASES = {
     }
   },
   edge_very_strict: {
-    name: '⚠️ Edge Case: Very Strict Filters (Low Yield)',
-    description: 'Ultra-strict budget ($8) and very high rating (4.9+) filters produce minimal candidates.',
+    name: '⚠️ Edge Case: Extremely Restrictive Budget ($8)',
+    description: 'Over-constrained profile ($8 price cap, 4.9+ rating) resulting in zero/minimal candidates.',
     profile: {
       skin_types: ['sensitive'],
       concerns: ['redness', 'sensitivity'],
@@ -521,7 +629,6 @@ const TEST_CASES = {
   }
 };
 
-// Export for use in app.js
 if (typeof module !== 'undefined') {
   module.exports = { RecommendationEngine, TEST_CASES };
 }

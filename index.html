@@ -3,13 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BeautyAI — AI Skincare Recommendation Engine | Orbo.ai Inspired</title>
-  <meta name="description" content="AI-powered personalized skincare recommendation system. Hybrid content-based and collaborative filtering for your skin type, concerns, and preferences." />
+  <title>BeautyAI — Personalized Skincare Recommendation Engine | Orbo.ai Inspired</title>
+  <meta name="description" content="AI-powered personalized skincare recommendation system. Hybrid content-based algorithm with Bayesian rating and ingredient safety constraints." />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<!-- SVG Gradient Defs -->
 <svg class="gradient-defs">
   <defs>
     <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -46,12 +45,12 @@
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 <div id="page-recommender" class="page-section active">
 
-  <!-- Hero -->
+  <!-- Hero Section -->
   <section class="hero">
     <div class="hero-badge">✨ Inspired by Orbo.ai — BeautyGPT + Smart Skin Analysis</div>
     <h1>Your Personalized<br/><span class="gradient-text">Skincare Routine</span></h1>
     <p class="hero-subtitle">
-      A hybrid AI recommendation engine matching you with the perfect skincare routine based on skin type, concerns, and active ingredients.
+      A hybrid content-based recommendation engine matching you with a personalized 5-step routine based on skin type, concerns, budget, and active ingredients.
     </p>
     <div class="hero-stats">
       <div>
@@ -72,7 +71,7 @@
       </div>
     </div>
 
-    <!-- AI Skin Diagnostic Scanner Widget (Orbo.ai Inspired) -->
+    <!-- AI Skin Scan Simulator (Phase 6: Explicitly labeled as simulated flow) -->
     <div class="scanner-card">
       <div class="scanner-viewfinder">
         <div class="scanner-face-icon">👤</div>
@@ -80,11 +79,11 @@
       </div>
       <div class="scanner-info">
         <div class="scanner-title">
-          <span>📷 AI Skin Diagnostic Simulator</span>
-          <span style="font-size:11px; padding:2px 8px; background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.3); border-radius:999px; color:var(--sky);">Live Scan</span>
+          <span>📷 AI Skin Scan Simulator</span>
+          <span style="font-size:11px; padding:2px 8px; background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.3); border-radius:999px; color:var(--sky);">Simulated Flow</span>
         </div>
         <div class="scanner-desc">
-          Simulate an AI facial scan (like Orbo Smart Skin Analysis) to auto-detect skin metrics and set your recommendation parameters instantly.
+          Simulated diagnostic flow for demonstration purposes. Auto-selects realistic skin parameters to generate your personalized routine.
         </div>
         <div class="scanner-metrics">
           <div class="scanner-metric-item">
@@ -106,7 +105,7 @@
         </div>
       </div>
       <button class="btn-scan" onclick="runSkinScan()">
-        ⚡ Simulate AI Scan
+        ⚡ Run Simulator
       </button>
     </div>
   </section>
@@ -115,7 +114,7 @@
   <div class="main-layout">
     <div class="two-col">
 
-      <!-- ─── Input Panel ────────────────────────────────────────────── -->
+      <!-- Input Panel -->
       <div class="input-panel">
         <div class="glass-card" style="padding: 28px;">
           <div class="panel-header">
@@ -209,27 +208,27 @@
 
         <!-- Algorithm Info -->
         <div class="glass-card" style="padding: 20px; margin-top: 16px;">
-          <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px;">Recommendation Architecture</div>
+          <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px;">Canonical Scoring Architecture</div>
           <div class="algo-flow" style="padding: 0; justify-content: flex-start; flex-direction: column; gap: 6px;">
-            <div class="algo-step highlight" style="width: 100%; font-size: 12px;">👤 Profile → Vector Embedding</div>
+            <div class="algo-step highlight" style="width: 100%; font-size: 12px;">👤 User Profile → Vector Space</div>
             <div class="algo-arrow" style="text-align: center; width: 100%; font-size: 12px;">↓</div>
             <div class="algo-step" style="width: 100%; font-size: 12px;">📐 Cosine Similarity (70%)</div>
             <div class="algo-arrow" style="text-align: center; width: 100%; font-size: 12px;">↓</div>
             <div class="algo-step" style="width: 100%; font-size: 12px;">⭐ Bayesian Rating (30%)</div>
             <div class="algo-arrow" style="text-align: center; width: 100%; font-size: 12px;">↓</div>
-            <div class="algo-step highlight" style="width: 100%; font-size: 12px;">🛡️ Safety Constraint Check</div>
+            <div class="algo-step highlight" style="width: 100%; font-size: 12px;">📋 Sort by Final Score & Validate Safety</div>
           </div>
         </div>
       </div>
 
-      <!-- ─── Output Panel ────────────────────────────────────────────── -->
+      <!-- Output Panel -->
       <div class="output-panel" id="outputPanel">
 
         <!-- Welcome state -->
         <div class="glass-card welcome-state" id="welcomeState">
           <div class="welcome-icon">🧴</div>
           <div class="welcome-title">Ready to Analyze Your Skin</div>
-          <p class="welcome-desc">Select your skin parameters on the left or click <strong>Simulate AI Scan</strong> to auto-detect your skin metrics and generate your personalized 5-step routine.</p>
+          <p class="welcome-desc">Select your skin parameters on the left or click <strong>Run Simulator</strong> to auto-detect parameters and generate your personalized 5-step routine.</p>
           <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
             <button class="btn-outline" onclick="loadQuickProfile('oily_acne'); generateRoutine()">Try: Oily + Acne Skin</button>
             <button class="btn-outline" onclick="loadQuickProfile('dry_sensitive'); generateRoutine()">Try: Dry + Sensitive</button>
@@ -240,7 +239,7 @@
         <!-- Loading state -->
         <div class="glass-card loading-overlay hidden" id="loadingState">
           <div class="loading-spinner"></div>
-          <div class="loading-text">Analyzing skin metrics & matching products...</div>
+          <div class="loading-text">Analyzing skin parameters & matching products...</div>
         </div>
 
         <!-- Results state -->
@@ -259,71 +258,129 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
-<!-- PAGE: METRICS                                                            -->
+<!-- PAGE: METRICS (Phases 12-24)                                            -->
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 <div id="page-metrics" class="page-section">
   <div class="main-layout" style="padding-top: 100px;">
-    <div style="margin-bottom: 32px;">
-      <h2 style="font-family:'Space Grotesk',sans-serif; font-size:32px; font-weight:800; margin-bottom:8px;">Evaluation Metrics</h2>
-      <p style="color:var(--text-secondary); font-size:15px;">Real-time performance metrics across all test case profiles.</p>
+    <div style="margin-bottom: 24px;">
+      <h2 style="font-family:'Space Grotesk',sans-serif; font-size:32px; font-weight:800; margin-bottom:8px;">Evaluation Dashboard</h2>
+      <p style="color:var(--text-secondary); font-size:15px;">Real calculated offline evaluation metrics across multi-K thresholds (K = 3, 5, 10), catalog coverage, diversity, latency, and safety compliance.</p>
     </div>
 
-    <!-- Key Metrics Cards -->
-    <div class="metrics-grid" id="metricsGrid">
+    <!-- Methodology Explanation Callout (Phase 24) -->
+    <div class="glass-card" style="padding: 20px 24px; margin-bottom: 28px; border-left: 4px solid var(--violet);">
+      <div style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:14px; color:var(--violet); margin-bottom:4px;">📖 Evaluation Methodology & Independent Ground Truth</div>
+      <p style="font-size:13px; color:var(--text-secondary); line-height:1.6;">
+        BeautyAI uses a deterministic attribute-based relevance heuristic $R(u, p) \in \{0, 1, 2, 3\}$ to compute independent ground-truth relevance labels. 
+        <strong>Crucially, relevance labels are calculated completely independently from the recommendation system's final score formula</strong>, preventing circular evaluation bias. 
+        Precision@K, Recall@K, and position-sensitive NDCG@K are evaluated across $K \in \{3, 5, 10\}$ using a representative suite of skin profiles.
+      </p>
+    </div>
+
+    <!-- Multi-K Metric Cards (Phases 14, 15, 16) -->
+    <div style="margin-bottom: 16px; font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em;">Precision@K (Fraction of top-K recommendations relevant to profile)</div>
+    <div class="metrics-grid">
       <div class="glass-card metric-card">
-        <div class="metric-value" id="metric-precision">—</div>
+        <div class="metric-value" id="metric-p3">—</div>
+        <div class="metric-label">Precision@3</div>
+        <div class="metric-desc">Top 3 recommendations</div>
+      </div>
+      <div class="glass-card metric-card">
+        <div class="metric-value" id="metric-p5">—</div>
         <div class="metric-label">Precision@5</div>
-        <div class="metric-desc">Fraction of top-5 recommendations relevant to user profile (threshold: 60% match).</div>
+        <div class="metric-desc">Top 5 recommendations</div>
       </div>
       <div class="glass-card metric-card">
-        <div class="metric-value" id="metric-recall">—</div>
+        <div class="metric-value" id="metric-p10">—</div>
+        <div class="metric-label">Precision@10</div>
+        <div class="metric-desc">Top 10 recommendations</div>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 16px; font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em;">Recall@K (Fraction of all relevant catalog products surfaced in top-K)</div>
+    <div class="metrics-grid">
+      <div class="glass-card metric-card">
+        <div class="metric-value" id="metric-r3">—</div>
+        <div class="metric-label">Recall@3</div>
+        <div class="metric-desc">Top 3 recommendations</div>
+      </div>
+      <div class="glass-card metric-card">
+        <div class="metric-value" id="metric-r5">—</div>
         <div class="metric-label">Recall@5</div>
-        <div class="metric-desc">Fraction of all relevant products surfaced in top-5.</div>
+        <div class="metric-desc">Top 5 recommendations</div>
       </div>
       <div class="glass-card metric-card">
-        <div class="metric-value" id="metric-ndcg">—</div>
+        <div class="metric-value" id="metric-r10">—</div>
+        <div class="metric-label">Recall@10</div>
+        <div class="metric-desc">Top 10 recommendations</div>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 16px; font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em;">NDCG@K (Normalized Discounted Cumulative Gain — Position-Sensitive Ranking Quality)</div>
+    <div class="metrics-grid">
+      <div class="glass-card metric-card">
+        <div class="metric-value" id="metric-ndcg3">—</div>
+        <div class="metric-label">NDCG@3</div>
+        <div class="metric-desc">Position discount K=3</div>
+      </div>
+      <div class="glass-card metric-card">
+        <div class="metric-value" id="metric-ndcg5">—</div>
         <div class="metric-label">NDCG@5</div>
-        <div class="metric-desc">Normalized Discounted Cumulative Gain — measures ranking quality.</div>
+        <div class="metric-desc">Position discount K=5</div>
       </div>
       <div class="glass-card metric-card">
-        <div class="metric-value" id="metric-latency">—</div>
-        <div class="metric-label">Avg Latency</div>
-        <div class="metric-desc">Average recommendation generation time in milliseconds.</div>
+        <div class="metric-value" id="metric-ndcg10">—</div>
+        <div class="metric-label">NDCG@10</div>
+        <div class="metric-desc">Position discount K=10</div>
       </div>
+    </div>
+
+    <div style="margin-bottom: 16px; font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em;">Catalog Quality, Latency & Safety Compliance (Phases 18, 19, 20, 21)</div>
+    <div class="metrics-grid">
       <div class="glass-card metric-card">
         <div class="metric-value" id="metric-coverage">—</div>
-        <div class="metric-label">Coverage</div>
-        <div class="metric-desc">% of total product catalog surfaced across test profiles.</div>
+        <div class="metric-label">Catalog Coverage</div>
+        <div class="metric-desc">% of distinct catalog products surfaced</div>
       </div>
       <div class="glass-card metric-card">
-        <div class="metric-value" id="metric-safety">100%</div>
-        <div class="metric-label">Safety Pass Rate</div>
-        <div class="metric-desc">% of routines passing ingredient conflict safety checks.</div>
+        <div class="metric-value" id="metric-diversity">—</div>
+        <div class="metric-label">Category Diversity</div>
+        <div class="metric-desc">Intra-list category dissimilarity ratio</div>
+      </div>
+      <div class="glass-card metric-card">
+        <div class="metric-value" id="metric-latency-avg">—</div>
+        <div class="metric-label">Average Latency</div>
+        <div class="metric-desc">Pure execution latency (excl. UI animation)</div>
+      </div>
+      <div class="glass-card metric-card">
+        <div class="metric-value" id="metric-safety-pct">100%</div>
+        <div class="metric-label">Safety Compliance</div>
+        <div class="metric-desc">% of routines with zero contraindication warnings</div>
       </div>
     </div>
 
     <!-- Precision Bar Chart -->
     <div class="glass-card chart-container">
-      <div class="chart-title">Precision@5 by Test Profile</div>
+      <div class="chart-title">Precision@5 Breakdown across Test Profiles</div>
       <div class="bar-chart" id="precisionChart"></div>
     </div>
 
     <div style="text-align: center; margin-top: 24px;">
       <button class="btn-primary" style="width: auto; padding: 14px 40px;" onclick="runMetricsBenchmark()">
-        ▶ Run Live Benchmark
+        ▶ Run Live Offline Evaluation Suite
       </button>
     </div>
   </div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
-<!-- PAGE: TEST CASES                                                         -->
+<!-- PAGE: TEST CASES (Phase 25)                                             -->
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 <div id="page-testcases" class="page-section">
   <div class="main-layout" style="padding-top: 100px;">
     <div style="margin-bottom: 32px;">
-      <h2 style="font-family:'Space Grotesk',sans-serif; font-size:32px; font-weight:800; margin-bottom:8px;">Test Cases</h2>
-      <p style="color:var(--text-secondary); font-size:15px;">Click any test case to run it live in the engine.</p>
+      <h2 style="font-family:'Space Grotesk',sans-serif; font-size:32px; font-weight:800; margin-bottom:8px;">Test Cases & Validation Suite</h2>
+      <p style="color:var(--text-secondary); font-size:15px;">Includes standard successful profiles and deliberate edge/limitation test cases (budget constraints, ingredient contraindication warnings, cold start).</p>
     </div>
 
     <div class="test-cases-grid" id="testCasesGrid"></div>
@@ -331,31 +388,31 @@
     <div class="glass-card" style="padding: 28px;" id="testResultArea">
       <div style="text-align:center; color: var(--text-muted); padding: 40px;">
         <div style="font-size:40px; margin-bottom:12px;">🧪</div>
-        <div style="font-size:15px;">Click a test case above to run it and view results here.</div>
+        <div style="font-size:15px;">Click a test case card above to execute live validation and inspect outputs.</div>
       </div>
     </div>
   </div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
-<!-- PAGE: BENCHMARK                                                          -->
+<!-- PAGE: BENCHMARK (Phase 26)                                              -->
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 <div id="page-benchmark" class="page-section">
   <div class="main-layout" style="padding-top: 100px;">
     <div style="margin-bottom: 32px;">
-      <h2 style="font-family:'Space Grotesk',sans-serif; font-size:32px; font-weight:800; margin-bottom:8px;">Orbo.ai Benchmark</h2>
-      <p style="color:var(--text-secondary); font-size:15px;">Comparing our system to Orbo.ai's production recommendation platform.</p>
+      <h2 style="font-family:'Space Grotesk',sans-serif; font-size:32px; font-weight:800; margin-bottom:8px;">Orbo.ai & Industry Benchmark</h2>
+      <p style="color:var(--text-secondary); font-size:15px;">Honest capability comparison comparing BeautyAI against commercial platforms (Orbo.ai, Nykaa).</p>
     </div>
 
     <div class="glass-card" style="padding: 0; overflow: hidden; margin-bottom: 24px;">
       <div style="padding: 24px 28px; border-bottom: 1px solid var(--border-glass);">
-        <div style="font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:700;">Feature Comparison Matrix</div>
+        <div style="font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:700;">Platform Capability Matrix</div>
       </div>
       <div style="overflow-x: auto;">
         <table class="benchmark-table">
           <thead>
             <tr>
-              <th>Feature / Dimension</th>
+              <th>Capability / Dimension</th>
               <th class="compare-col-header ours">🤖 BeautyAI (Ours)</th>
               <th class="compare-col-header" style="color: var(--rose) !important;">💄 Orbo.ai</th>
               <th class="compare-col-header" style="color: var(--mint) !important;">🛍️ Nykaa</th>
@@ -363,46 +420,46 @@
           </thead>
           <tbody>
             <tr>
-              <td><strong>Recommendation Type</strong></td>
-              <td>Hybrid (Content + Collaborative)</td>
+              <td><strong>Recommendation Engine</strong></td>
+              <td>Hybrid Content-Based + Bayesian Rating</td>
               <td>LLM + Computer Vision + Content</td>
-              <td>Collaborative Filtering</td>
+              <td>Collaborative Filtering + Editorial</td>
             </tr>
             <tr>
-              <td><strong>Skin Type Detection</strong></td>
-              <td><span class="benchmark-check">✓</span> Form + AI Scanner Simulator</td>
-              <td><span class="benchmark-check">✓</span> Live Camera AI Scan</td>
+              <td><strong>Skin Diagnostic Flow</strong></td>
+              <td><span class="benchmark-check">✓</span> Form + AI Scan Simulator</td>
+              <td><span class="benchmark-check">✓</span> Live Camera AR/CV Scan</td>
               <td><span class="benchmark-partial">~</span> Manual quiz</td>
             </tr>
             <tr>
-              <td><strong>Ingredient Safety Check</strong></td>
-              <td><span class="benchmark-check">✓</span> Rule-based validator</td>
+              <td><strong>Ingredient Safety Validator</strong></td>
+              <td><span class="benchmark-check">✓</span> Deterministic Rule Engine</td>
               <td><span class="benchmark-check">✓</span> Dermatologist DB</td>
-              <td><span class="benchmark-cross">✗</span></td>
+              <td><span class="benchmark-cross">✗</span> None</td>
             </tr>
             <tr>
               <td><strong>Score Explainability</strong></td>
-              <td><span class="benchmark-check">✓</span> Full Breakdown Modal</td>
+              <td><span class="benchmark-check">✓</span> Full Score Component Modal</td>
               <td><span class="benchmark-partial">~</span> Partial in BeautyGPT</td>
-              <td><span class="benchmark-cross">✗</span></td>
+              <td><span class="benchmark-cross">✗</span> None</td>
             </tr>
             <tr>
-              <td><strong>Routine Builder (5-step)</strong></td>
-              <td><span class="benchmark-check">✓</span> Automated</td>
-              <td><span class="benchmark-check">✓</span> AI-personalized</td>
+              <td><strong>Automated 5-Step Routine</strong></td>
+              <td><span class="benchmark-check">✓</span> Automated Category Routine</td>
+              <td><span class="benchmark-check">✓</span> AI-Personalized Routine</td>
               <td><span class="benchmark-partial">~</span> Editorial only</td>
             </tr>
             <tr>
-              <td><strong>Evaluation Dashboard</strong></td>
-              <td><span class="benchmark-check">✓</span> Precision, Recall, NDCG</td>
-              <td><span class="benchmark-cross">✗</span> Internal only</td>
-              <td><span class="benchmark-cross">✗</span></td>
+              <td><strong>Offline Evaluation Suite</strong></td>
+              <td><span class="benchmark-check">✓</span> Precision, Recall, NDCG @ 3,5,10</td>
+              <td><span class="benchmark-cross">✗</span> Proprietary / Internal</td>
+              <td><span class="benchmark-cross">✗</span> Proprietary / Internal</td>
             </tr>
             <tr>
-              <td><strong>Latency</strong></td>
-              <td><span class="benchmark-check">✓</span> &lt;2ms (client-side)</td>
-              <td><span class="benchmark-partial">~</span> 200–500ms</td>
-              <td><span class="benchmark-partial">~</span> 300–800ms</td>
+              <td><strong>Conversational Assistant</strong></td>
+              <td><span class="benchmark-check">✓</span> BeautyGPT Server Proxy</td>
+              <td><span class="benchmark-check">✓</span> BeautyGPT Platform</td>
+              <td><span class="benchmark-cross">✗</span> Search filter only</td>
             </tr>
           </tbody>
         </table>
@@ -424,14 +481,6 @@
     </div>
     <button class="modal-close" style="width:24px;height:24px;font-size:12px;" onclick="toggleGptModal()">✕</button>
   </div>
-  
-  <!-- OpenRouter Key Option -->
-  <div style="padding:8px 16px; background:rgba(255,255,255,0.02); border-bottom:1px solid var(--border-glass); display:flex; gap:6px; align-items:center;">
-    <input type="password" id="openRouterKeyInput" placeholder="Paste OpenRouter Key (sk-or-...)" 
-      style="flex:1; background:var(--bg-card); border:1px solid var(--border-glass); border-radius:6px; padding:4px 8px; font-size:11px; color:white; outline:none;" 
-      onchange="saveOpenRouterKey()" />
-    <button onclick="saveOpenRouterKey()" style="padding:4px 10px; background:var(--bg-card); border:1px solid var(--border-glass); border-radius:6px; font-size:11px; color:var(--violet); cursor:pointer;">Save</button>
-  </div>
 
   <div class="gpt-messages" id="gptMessages">
     <div class="gpt-msg bot">
@@ -444,7 +493,7 @@
   </div>
 </div>
 
-<!-- ─── Explainability Modal ────────────────────────────────────────────── -->
+<!-- ─── Score Explanation Modal ─────────────────────────────────────────── -->
 <div class="modal-overlay hidden" id="explainModal" onclick="closeModal(event)">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div class="modal-header">

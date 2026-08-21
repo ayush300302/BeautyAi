@@ -1,0 +1,13 @@
+{
+  "name": "beautyai-recommendation-engine",
+  "version": "1.0.0",
+  "description": "BeautyAI Personalized Skincare Recommendation Engine",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node recommendation_engine.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
