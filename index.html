@@ -47,7 +47,7 @@
 
   <!-- Hero Section -->
   <section class="hero">
-    <div class="hero-badge">✨ Inspired by Orbo.ai — BeautyGPT + Smart Skin Analysis</div>
+    <div class="hero-badge">✨ Assignment Benchmark — Orbo.ai + Smart Skin Analysis</div>
     <h1>Your Personalized<br/><span class="gradient-text">Skincare Routine</span></h1>
     <p class="hero-subtitle">
       A hybrid content-based recommendation engine matching you with a personalized 5-step routine based on skin type, concerns, budget, and active ingredients.
@@ -65,13 +65,13 @@
         <div class="hero-stat-value">Hybrid</div>
         <div class="hero-stat-label">Algorithm</div>
       </div>
-      <div>
-        <div class="hero-stat-value">&lt;2ms</div>
-        <div class="hero-stat-label">Latency</div>
+      <div title="Recommendation-engine execution time; excludes network and UI latency.">
+        <div class="hero-stat-value">1.1ms</div>
+        <div class="hero-stat-label">Avg Latency</div>
       </div>
     </div>
 
-    <!-- AI Skin Scan Simulator (Phase 6: Explicitly labeled as simulated flow) -->
+    <!-- AI Skin Scan Simulator (Demonstration flow clearly labeled) -->
     <div class="scanner-card">
       <div class="scanner-viewfinder">
         <div class="scanner-face-icon">👤</div>
@@ -87,7 +87,7 @@
         </div>
         <div class="scanner-metrics">
           <div class="scanner-metric-item">
-            <div class="scanner-metric-val" id="scan-hydration">84%</div>
+            <div class="scanner-metric-val" id="scan-hydration">High</div>
             <div class="scanner-metric-lbl">Hydration</div>
           </div>
           <div class="scanner-metric-item">
@@ -96,13 +96,14 @@
           </div>
           <div class="scanner-metric-item">
             <div class="scanner-metric-val" id="scan-pores" style="color:var(--amber)">Mild</div>
-            <div class="scanner-metric-lbl">Pores</div>
+            <div class="scanner-metric-lbl">Pore Vis.</div>
           </div>
           <div class="scanner-metric-item">
-            <div class="scanner-metric-val" id="scan-score" style="color:var(--mint)">92%</div>
-            <div class="scanner-metric-lbl">Skin Score</div>
+            <div class="scanner-metric-val" id="scan-score" style="color:var(--mint)">92/100*</div>
+            <div class="scanner-metric-lbl">Profile Score</div>
           </div>
         </div>
+        <div style="font-size:10px; color:var(--text-muted); margin-top:6px; font-style:italic;">*Demonstration value, not a clinical measurement.</div>
       </div>
       <button class="btn-scan" onclick="runSkinScan()">
         ⚡ Run Simulator
@@ -132,7 +133,7 @@
               <div class="chip" data-group="skinType" data-value="oily" onclick="toggleChip(this, 'skinType')" id="chip-oily">💧 Oily</div>
               <div class="chip" data-group="skinType" data-value="dry" onclick="toggleChip(this, 'skinType')" id="chip-dry">🌵 Dry</div>
               <div class="chip" data-group="skinType" data-value="combination" onclick="toggleChip(this, 'skinType')" id="chip-combination">⚖️ Combination</div>
-              <div class="chip" data-group="skinType" data-value="sensitive" onclick="toggleChip(this, 'skinType')" id="chip-sensitive">🌸 Sensitive</div>
+              <div class="chip" data-group="skinType" data-value="sensitive" onclick="toggleChip(this, 'sensitive')" id="chip-sensitive">🌸 Sensitive</div>
               <div class="chip" data-group="skinType" data-value="normal" onclick="toggleChip(this, 'skinType')" id="chip-normal">✨ Normal</div>
               <div class="chip" data-group="skinType" data-value="acne_prone" onclick="toggleChip(this, 'skinType')" id="chip-acne_prone">⚡ Acne-Prone</div>
             </div>
@@ -258,16 +259,16 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
-<!-- PAGE: METRICS (Phases 12-24)                                            -->
+<!-- PAGE: METRICS                                                           -->
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 <div id="page-metrics" class="page-section">
   <div class="main-layout" style="padding-top: 100px;">
     <div style="margin-bottom: 24px;">
       <h2 style="font-family:'Space Grotesk',sans-serif; font-size:32px; font-weight:800; margin-bottom:8px;">Evaluation Dashboard</h2>
-      <p style="color:var(--text-secondary); font-size:15px;">Real calculated offline evaluation metrics across multi-K thresholds (K = 3, 5, 10), catalog coverage, diversity, latency, and safety compliance.</p>
+      <p style="color:var(--text-secondary); font-size:15px;">Real calculated offline evaluation metrics across multi-K thresholds (K = 3, 5, 10), catalog coverage, diversity, latency, and safety validation.</p>
     </div>
 
-    <!-- Methodology Explanation Callout (Phase 24) -->
+    <!-- Methodology Explanation Callout -->
     <div class="glass-card" style="padding: 20px 24px; margin-bottom: 28px; border-left: 4px solid var(--violet);">
       <div style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:14px; color:var(--violet); margin-bottom:4px;">📖 Evaluation Methodology & Independent Ground Truth</div>
       <p style="font-size:13px; color:var(--text-secondary); line-height:1.6;">
@@ -277,7 +278,7 @@
       </p>
     </div>
 
-    <!-- Multi-K Metric Cards (Phases 14, 15, 16) -->
+    <!-- Multi-K Metric Cards -->
     <div style="margin-bottom: 16px; font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em;">Precision@K (Fraction of top-K recommendations relevant to profile)</div>
     <div class="metrics-grid">
       <div class="glass-card metric-card">
@@ -335,7 +336,7 @@
       </div>
     </div>
 
-    <div style="margin-bottom: 16px; font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em;">Catalog Quality, Latency & Safety Compliance (Phases 18, 19, 20, 21)</div>
+    <div style="margin-bottom: 16px; font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em;">Catalog Quality, Latency & Safety Validation</div>
     <div class="metrics-grid">
       <div class="glass-card metric-card">
         <div class="metric-value" id="metric-coverage">—</div>
@@ -350,17 +351,29 @@
       <div class="glass-card metric-card">
         <div class="metric-value" id="metric-latency-avg">—</div>
         <div class="metric-label">Average Latency</div>
-        <div class="metric-desc">Pure execution latency (excl. UI animation)</div>
+        <div class="metric-desc">Pure recommendation-engine execution time (excl. UI)</div>
       </div>
       <div class="glass-card metric-card">
-        <div class="metric-value" id="metric-safety-pct">100%</div>
-        <div class="metric-label">Safety Compliance</div>
-        <div class="metric-desc">% of routines with zero contraindication warnings</div>
+        <div class="metric-value" id="metric-safety-pct">1/1</div>
+        <div class="metric-label">Safety Validation</div>
+        <div class="metric-desc">1/1 expected conflicts detected (0 missed)</div>
+      </div>
+    </div>
+
+    <!-- Detailed Safety Rule Interception Breakdown -->
+    <div class="glass-card" style="padding: 20px 24px; margin-top: 16px; border-left: 4px solid var(--amber);">
+      <div style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:14px; color:var(--amber); margin-bottom:8px;">🛡️ Safety Engine Rule Interception Validation</div>
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; font-size:12px; color:var(--text-secondary);">
+        <div>Routines evaluated: <strong style="color:var(--text-primary)">6</strong></div>
+        <div>Expected conflicts: <strong style="color:var(--text-primary)">1</strong></div>
+        <div>Correctly detected: <strong style="color:var(--mint)">1</strong></div>
+        <div>Missed conflicts: <strong style="color:var(--mint)">0</strong></div>
+        <div>False warnings: <strong style="color:var(--mint)">0</strong></div>
       </div>
     </div>
 
     <!-- Precision Bar Chart -->
-    <div class="glass-card chart-container">
+    <div class="glass-card chart-container" style="margin-top: 24px;">
       <div class="chart-title">Precision@5 Breakdown across Test Profiles</div>
       <div class="bar-chart" id="precisionChart"></div>
     </div>
@@ -374,7 +387,7 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
-<!-- PAGE: TEST CASES (Phase 25)                                             -->
+<!-- PAGE: TEST CASES                                                        -->
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 <div id="page-testcases" class="page-section">
   <div class="main-layout" style="padding-top: 100px;">
@@ -395,13 +408,13 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
-<!-- PAGE: BENCHMARK (Phase 26)                                              -->
+<!-- PAGE: BENCHMARK                                                         -->
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 <div id="page-benchmark" class="page-section">
   <div class="main-layout" style="padding-top: 100px;">
     <div style="margin-bottom: 32px;">
-      <h2 style="font-family:'Space Grotesk',sans-serif; font-size:32px; font-weight:800; margin-bottom:8px;">Orbo.ai & Industry Benchmark</h2>
-      <p style="color:var(--text-secondary); font-size:15px;">Honest capability comparison comparing BeautyAI against commercial platforms (Orbo.ai, Nykaa).</p>
+      <h2 style="font-family:'Space Grotesk',sans-serif; font-size:32px; font-weight:800; margin-bottom:8px;">Assignment Benchmark & Platform Matrix</h2>
+      <p style="color:var(--text-secondary); font-size:15px;">Technical comparison comparing BeautyAI against publicly described capabilities of industry platforms.</p>
     </div>
 
     <div class="glass-card" style="padding: 0; overflow: hidden; margin-bottom: 24px;">
@@ -422,44 +435,44 @@
             <tr>
               <td><strong>Recommendation Engine</strong></td>
               <td>Hybrid Content-Based + Bayesian Rating</td>
-              <td>LLM + Computer Vision + Content</td>
-              <td>Collaborative Filtering + Editorial</td>
+              <td>Publicly described AI/CV recommendation capabilities</td>
+              <td>Publicly described AI-powered recommendation capabilities</td>
             </tr>
             <tr>
               <td><strong>Skin Diagnostic Flow</strong></td>
-              <td><span class="benchmark-check">✓</span> Form + AI Scan Simulator</td>
-              <td><span class="benchmark-check">✓</span> Live Camera AR/CV Scan</td>
-              <td><span class="benchmark-partial">~</span> Manual quiz</td>
+              <td><span class="benchmark-check">✓</span> Profile form + simulated scanner</td>
+              <td><span class="benchmark-check">✓</span> AI/computer-vision skin analysis</td>
+              <td><span class="benchmark-partial">~</span> AI/quiz-based skin analysis experiences</td>
             </tr>
             <tr>
               <td><strong>Ingredient Safety Validator</strong></td>
               <td><span class="benchmark-check">✓</span> Deterministic Rule Engine</td>
-              <td><span class="benchmark-check">✓</span> Dermatologist DB</td>
-              <td><span class="benchmark-cross">✗</span> None</td>
+              <td><span class="benchmark-check">✓</span> Public safety/skin-analysis capabilities</td>
+              <td><span class="benchmark-cross">✗</span> Not publicly documented</td>
             </tr>
             <tr>
               <td><strong>Score Explainability</strong></td>
-              <td><span class="benchmark-check">✓</span> Full Score Component Modal</td>
-              <td><span class="benchmark-partial">~</span> Partial in BeautyGPT</td>
-              <td><span class="benchmark-cross">✗</span> None</td>
+              <td><span class="benchmark-check">✓</span> Component-level scoring</td>
+              <td><span class="benchmark-partial">~</span> Not publicly documented</td>
+              <td><span class="benchmark-cross">✗</span> Not publicly documented</td>
             </tr>
             <tr>
               <td><strong>Automated 5-Step Routine</strong></td>
               <td><span class="benchmark-check">✓</span> Automated Category Routine</td>
               <td><span class="benchmark-check">✓</span> AI-Personalized Routine</td>
-              <td><span class="benchmark-partial">~</span> Editorial only</td>
+              <td><span class="benchmark-partial">~</span> Publicly described catalog experience</td>
             </tr>
             <tr>
               <td><strong>Offline Evaluation Suite</strong></td>
-              <td><span class="benchmark-check">✓</span> Precision, Recall, NDCG @ 3,5,10</td>
-              <td><span class="benchmark-cross">✗</span> Proprietary / Internal</td>
-              <td><span class="benchmark-cross">✗</span> Proprietary / Internal</td>
+              <td><span class="benchmark-check">✓</span> Precision/Recall/NDCG + Coverage + Diversity</td>
+              <td><span class="benchmark-cross">✗</span> Not publicly disclosed</td>
+              <td><span class="benchmark-cross">✗</span> Not publicly disclosed</td>
             </tr>
             <tr>
               <td><strong>Conversational Assistant</strong></td>
               <td><span class="benchmark-check">✓</span> BeautyGPT Server Proxy</td>
               <td><span class="benchmark-check">✓</span> BeautyGPT Platform</td>
-              <td><span class="benchmark-cross">✗</span> Search filter only</td>
+              <td><span class="benchmark-cross">✗</span> Not publicly documented</td>
             </tr>
           </tbody>
         </table>

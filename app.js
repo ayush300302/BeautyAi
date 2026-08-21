@@ -50,9 +50,9 @@ async function runSkinScan() {
   await delay(750);
 
   const presets = [
-    { skinType: 'oily', concern: 'acne', hydration: '76%', sebum: 'High', pores: 'Enlarged', score: '88%' },
-    { skinType: 'dry', concern: 'dryness', hydration: '42%', sebum: 'Low', pores: 'Normal', score: '79%' },
-    { skinType: 'combination', concern: 'pores', hydration: '68%', sebum: 'T-Zone', pores: 'Moderate', score: '91%' }
+    { skinType: 'oily', concern: 'acne', hydration: 'High', sebum: 'High', pores: 'Mild', score: '92/100*' },
+    { skinType: 'dry', concern: 'dryness', hydration: 'Low', sebum: 'Low', pores: 'Mild', score: '84/100*' },
+    { skinType: 'combination', concern: 'pores', hydration: 'Moderate', sebum: 'T-Zone', pores: 'Moderate', score: '89/100*' }
   ];
 
   const scan = presets[Math.floor(Math.random() * presets.length)];
