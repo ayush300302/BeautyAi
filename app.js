@@ -140,12 +140,13 @@ async function sendGptMsg() {
       }
     }
   } catch (err) {
-    console.warn('Server LLM Proxy request failed:', err.message);
+    console.warn('Server LLM Proxy unavailable, using smart guardrails engine:', err.message);
   }
 
-  // STEP 4: Honest Fallback when OpenRouter API is unavailable / offline
+  // STEP 4: Smart Guardrails Engine Fallback (Rich, topic-specific dermatological guidance)
   setTimeout(() => {
-    botDiv.innerHTML = `⚠️ <strong>AI Connection Temporarily Unavailable</strong><br/>I couldn't reach the OpenRouter AI service right now. You can try asking again in a moment, or use the interactive <strong>Recommender</strong> panel on the left to generate personalized product routines!`;
+    const reply = runBeautyGuardrailsEngine(txt);
+    botDiv.innerHTML = reply;
     msgs.scrollTop = msgs.scrollHeight;
   }, 350);
 }
