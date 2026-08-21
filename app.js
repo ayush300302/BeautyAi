@@ -159,8 +159,13 @@ function checkStrictGuardrail(userQuery) {
     return "You're very welcome! 🌟 Stay consistent with your daily routine for the best skin results. Let me know if you need any ingredient safety checks!";
   }
 
-  // Off-Topic Guardrail (programming, math, politics, sports)
-  if (/\b(python|javascript|code|math|calculate|president|football|cricket|recipe|weather)\b/.test(q) && !/\b(skin|face|cream|acne|serum|sunscreen)\b/.test(q)) {
+  // Celebrity / Athlete Skincare Guardrail (e.g. Virat Kohli, athletes, outdoor sports)
+  if (/\b(virat|kohli|cricket|athlete|actor|celebrity|sports)\b/.test(q) && /\b(skin|skincare|sckincare|routine|face|sunscreen|glow)\b/.test(q)) {
+    return "High-performance athletes like **Virat Kohli** focus on heavy outdoor skin protection: 1. **Broad-Spectrum Sunscreen (SPF 50+)** to shield against long hours in the sun, 2. **Salicylic Acid Cleanser** to remove sweat and prevent clogged pores, and 3. **Hyaluronic Acid Moisturizer** for lightweight hydration! ☀️🏏";
+  }
+
+  // Off-Topic Non-Skincare Guardrail (math, programming, politics, non-skincare sports)
+  if (/\b(python|javascript|code|math|calculate|president|football|cricket|recipe|weather|politics)\b/.test(q) && !/\b(skin|skincare|sckincare|face|cream|acne|serum|sunscreen)\b/.test(q)) {
     return "I am specialized strictly as your **AI Beauty Advisor** 🧴. I can only assist with skincare routines, skin types, product matching, and dermatological safety!";
   }
 
@@ -169,6 +174,10 @@ function checkStrictGuardrail(userQuery) {
 
 function runBeautyGuardrailsEngine(userQuery) {
   const q = userQuery.toLowerCase().trim();
+
+  if (/\b(virat|kohli|celebrity|athlete|actor|sports)\b/.test(q)) {
+    return "High-performance athletes like **Virat Kohli** focus on heavy outdoor skin protection: 1. **Broad-Spectrum Sunscreen (SPF 50+)** to shield against long hours in the sun, 2. **Salicylic Acid Cleanser** to remove sweat and prevent clogged pores, and 3. **Hyaluronic Acid Moisturizer** for lightweight hydration! ☀️🏏";
+  }
 
   if (/\b(oily|greasy|sebum|oiliness|oil|kil|oily kil)\b/.test(q)) {
     return "For **Oily Skin**, focus on lightweight oil-control ingredients: **Salicylic Acid (BHA)**, **Niacinamide**, and **Zinc**. Try *CeraVe Foaming Cleanser* and *Neutrogena Hydro Boost Gel*!";
