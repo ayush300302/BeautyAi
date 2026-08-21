@@ -424,6 +424,14 @@
     </div>
     <button class="modal-close" style="width:24px;height:24px;font-size:12px;" onclick="toggleGptModal()">✕</button>
   </div>
+  
+  <!-- OpenRouter Key Option -->
+  <div style="padding:8px 16px; background:rgba(255,255,255,0.02); border-bottom:1px solid var(--border-glass); display:flex; gap:6px; align-items:center;">
+    <input type="password" id="openRouterKeyInput" placeholder="Paste OpenRouter Key (sk-or-...)" 
+      style="flex:1; background:var(--bg-card); border:1px solid var(--border-glass); border-radius:6px; padding:4px 8px; font-size:11px; color:white; outline:none;" 
+      onchange="saveOpenRouterKey()" />
+    <button onclick="saveOpenRouterKey()" style="padding:4px 10px; background:var(--bg-card); border:1px solid var(--border-glass); border-radius:6px; font-size:11px; color:var(--violet); cursor:pointer;">Save</button>
+  </div>
 
   <div class="gpt-messages" id="gptMessages">
     <div class="gpt-msg bot">

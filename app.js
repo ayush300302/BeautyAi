@@ -120,9 +120,19 @@ async function sendGptMsg() {
   msgs.appendChild(botDiv);
   msgs.scrollTop = msgs.scrollHeight;
 
+  // ─── STEP 1: Strict Guardrails Pre-Check (Affection, Greetings, Gratitude, Off-Topic) ─────────
+  const guardrailReply = checkStrictGuardrail(txt);
+  if (guardrailReply) {
+    setTimeout(() => {
+      botDiv.innerHTML = guardrailReply;
+      msgs.scrollTop = msgs.scrollHeight;
+    }, 300);
+    return;
+  }
+
+  // ─── STEP 2: OpenRouter LLM API for Skincare Queries ──────────────────────
   const openRouterKey = localStorage.getItem('beautyai_openrouter_key') || (document.getElementById('openRouterKeyInput')?.value.trim()) || DEFAULT_OPENROUTER_KEY;
 
-  // ─── Option A: OpenRouter API (Real LLM) ───────────────────────────────────
   if (openRouterKey && openRouterKey.startsWith('sk-or-')) {
     try {
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -141,10 +151,9 @@ async function sendGptMsg() {
               content: `You are BeautyGPT, an expert AI Beauty & Skincare Advisor created for BeautyAI / Orbo.ai.
 Provide warm, concise, highly knowledgeable dermatological advice.
 GUARDRAILS:
-1. Warmly handle greetings, gratitude, and affection (e.g. if user says "I love you" or "thank you", reply warmly like "Aww, thank you! 💖 I am here to help your skin glow. What skincare questions do you have today?").
-2. Handle typos gracefully (e.g. "oily kil" -> oily skin).
-3. If query is off-topic (coding, math, politics), politely decline: "I am specialized strictly as your AI Beauty Advisor. I can only help with skincare routines, products, and ingredient safety!"
-4. Keep answers under 3-4 sentences, formatting key products or ingredients in bold.`
+1. Handle typos gracefully (e.g. "oily kil" -> oily skin).
+2. If query is off-topic (coding, math, politics), decline gracefully: "I am specialized strictly as your AI Beauty Advisor. I can only help with skincare routines, products, and ingredient safety!"
+3. Keep answers under 3-4 sentences, formatting key products or ingredients in bold.`
             },
             { role: 'user', content: txt }
           ]
@@ -160,16 +169,46 @@ GUARDRAILS:
         return;
       }
     } catch (err) {
-      console.warn('OpenRouter API call failed, falling back to Guardrails Engine:', err);
+      console.warn('OpenRouter API call failed, falling back to Local Engine:', err);
     }
   }
 
-  // ─── Option B: Local Guardrails & Smart Intent Engine ──────────────────────
+  // ─── STEP 3: Local Engine Fallback ─────────────────────────────────────────
   setTimeout(() => {
     const reply = runBeautyGuardrailsEngine(txt);
     botDiv.innerHTML = reply;
     msgs.scrollTop = msgs.scrollHeight;
   }, 400);
+}
+
+/**
+ * Strict Guardrail Pre-Check Engine:
+ * Intercepts affection ("i love you"), greetings, gratitude, and off-topic queries BEFORE calling external LLM.
+ */
+function checkStrictGuardrail(userQuery) {
+  const q = userQuery.toLowerCase().trim();
+
+  // 1. Affection / Love Guardrail ("i love you", "love u", "marry me")
+  if (/\b(love|marry|date|cute|sweet|handsome)\b/.test(q) && (q.includes('you') || q.includes('u') || q.length < 16)) {
+    return "Aww, thank you so much! 💖 I love helping you get healthy, glowing skin! Tell me your skin type or concern, and let's find your perfect routine ✨";
+  }
+
+  // 2. Greetings Guardrail ("hi", "hello", "hey", "good morning")
+  if (/^(hi|hello|hey|heyya|sup|good morning|good evening|greetings)\b/.test(q)) {
+    return "Hello there! ✨ Ready to build your personalized skincare routine? Tell me your skin type (Oily, Dry, Combination, Sensitive) or any concerns you have!";
+  }
+
+  // 3. Gratitude Guardrail ("thanks", "thank you", "cool")
+  if (/\b(thank|thanks|thx|cool|great|awesome|helpful)\b/.test(q)) {
+    return "You're very welcome! 🌟 Stay consistent with your daily routine for the best skin results. Let me know if you need any ingredient safety checks!";
+  }
+
+  // 4. Off-Topic Non-Skincare Guardrail (math, programming, politics, sports)
+  if (/\b(python|javascript|code|math|calculate|president|football|cricket|recipe|weather)\b/.test(q) && !/\b(skin|face|cream|acne|serum|sunscreen)\b/.test(q)) {
+    return "I am specialized strictly as your **AI Beauty Advisor** 🧴. I can only assist with skincare routines, skin types, product matching, and dermatological safety!";
+  }
+
+  return null; // No guardrail hit; proceed to LLM/Skincare engine
 }
 
 /**
