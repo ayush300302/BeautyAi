@@ -68,7 +68,7 @@ async function runSkinScan() {
   generateRoutine();
 }
 
-// ─── BeautyGPT Assistant (Secure Server Proxy + Local Guardrails Fallback) ──────
+// ─── BeautyGPT Assistant (Secure Server Proxy + Local Recommendation Engine) ───
 function toggleGptModal() {
   const modal = document.getElementById('gptModal');
   if (modal) modal.classList.toggle('hidden');
@@ -102,17 +102,27 @@ async function sendGptMsg() {
   msgs.appendChild(botDiv);
   msgs.scrollTop = msgs.scrollHeight;
 
-  // STEP 1: Strict Conversational Guardrails Pre-Check (Affection, Greetings, Gratitude, Off-Topic)
-  const guardrailReply = checkStrictGuardrail(txt);
-  if (guardrailReply) {
+  // STEP 1: Strict Out-of-Scope & Special Intent Pre-Check
+  const preCheckReply = checkPreRoutingIntents(txt);
+  if (preCheckReply) {
     setTimeout(() => {
-      botDiv.innerHTML = guardrailReply;
+      botDiv.innerHTML = preCheckReply;
       msgs.scrollTop = msgs.scrollHeight;
-    }, 300);
+    }, 250);
     return;
   }
 
-  // STEP 2: Secure Backend LLM Proxy Call
+  // STEP 2: Product Catalog Recommendation Intent Check (Uses BeautyAI Engine)
+  if (isCatalogRecommendationIntent(txt)) {
+    setTimeout(() => {
+      const recReply = handleProductRecommendationQuery(txt);
+      botDiv.innerHTML = recReply;
+      msgs.scrollTop = msgs.scrollHeight;
+    }, 350);
+    return;
+  }
+
+  // STEP 3: Conversational Skincare Query -> OpenRouter Server Proxy (Gemini 2.5)
   try {
     const res = await fetch('/api/chat', {
       method: 'POST',
@@ -130,151 +140,95 @@ async function sendGptMsg() {
       }
     }
   } catch (err) {
-    console.warn('Server LLM Proxy unavailable, trying direct OpenRouter API:', err.message);
+    console.warn('Server LLM Proxy request failed:', err.message);
   }
 
-  // STEP 2b: Direct OpenRouter Client Call (Fallback for static client environments)
-  const fallbackKey = String.fromCharCode(115, 107, 45, 111, 114, 45, 118, 49, 45, 49, 53, 50, 57, 51, 102, 54, 56, 97, 102, 50, 98, 50, 55, 56, 102, 97, 51, 57, 101, 100, 99, 52, 57, 53, 48, 98, 99, 48, 97, 56, 99, 101, 50, 99, 49, 55, 100, 50, 50, 55, 99, 102, 55, 54, 98, 97, 53, 55, 56, 98, 102, 48, 54, 56, 98, 100, 99, 48, 100, 56, 97, 50);
-  try {
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${fallbackKey}`,
-        'HTTP-Referer': window.location.href,
-        'X-Title': 'BeautyAI Assistant'
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          {
-            role: 'system',
-            content: `You are BeautyGPT, an expert AI Beauty & Skincare Advisor created for BeautyAI / Orbo.ai.
-Provide warm, concise, highly knowledgeable dermatological advice for any skincare query (including celebrity skincare routines like Virat Kohli, outdoor protection, active ingredients, and skin types).
-Keep answers under 3-4 sentences, formatting key products or ingredients in bold.`
-          },
-          { role: 'user', content: txt }
-        ]
-      })
-    });
-
-    const data = await response.json();
-    if (data.choices && data.choices[0]?.message?.content) {
-      let reply = data.choices[0].message.content;
-      reply = reply.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      botDiv.innerHTML = reply;
-      msgs.scrollTop = msgs.scrollHeight;
-      return;
-    }
-  } catch (err) {
-    console.warn('Direct OpenRouter call failed:', err);
-  }
-
-  // STEP 3: Local Deterministic Guardrails Fallback
+  // STEP 4: Honest Fallback when OpenRouter API is unavailable / offline
   setTimeout(() => {
-    const reply = runBeautyGuardrailsEngine(txt);
-    botDiv.innerHTML = reply;
+    botDiv.innerHTML = `⚠️ <strong>AI Connection Temporarily Unavailable</strong><br/>I couldn't reach the OpenRouter AI service right now. You can try asking again in a moment, or use the interactive <strong>Recommender</strong> panel on the left to generate personalized product routines!`;
     msgs.scrollTop = msgs.scrollHeight;
-  }, 400);
+  }, 350);
 }
 
-function checkStrictGuardrail(userQuery) {
+/**
+ * Pre-Routing Intent Check (Greetings, Gratitude, Affection, Out-of-Scope)
+ */
+function checkPreRoutingIntents(userQuery) {
   const q = userQuery.toLowerCase().trim();
 
-  // Affection Guardrail ("i love you", "love u", "marry me")
+  // Affection ("i love you", "love u", "marry me")
   if (/\b(love|marry|date|cute|sweet|handsome)\b/.test(q) && (q.includes('you') || q.includes('u') || q.length < 16)) {
     return "Aww, thank you so much! 💖 I love helping you get healthy, glowing skin! Tell me your skin type or concern, and let's find your perfect routine ✨";
   }
 
-  // Greetings Guardrail ("hi", "hello", "hey", "good morning")
+  // Greetings ("hi", "hello", "hey", "good morning")
   if (/^(hi|hello|hey|heyya|sup|good morning|good evening|greetings)\b/.test(q)) {
     return "Hello there! ✨ Ready to build your personalized skincare routine? Tell me your skin type (Oily, Dry, Combination, Sensitive) or any concerns you have!";
   }
 
-  // Gratitude Guardrail ("thanks", "thank you")
+  // Gratitude ("thanks", "thank you")
   if (/\b(thank|thanks|thx|cool|great|awesome|helpful)\b/.test(q)) {
     return "You're very welcome! 🌟 Stay consistent with your daily routine for the best skin results. Let me know if you need any ingredient safety checks!";
   }
 
-  // Pure Off-Topic Non-Skincare Guardrail (math, coding, politics, non-skincare sports)
-  if (/\b(python|javascript|code|math|calculate|president|recipe|weather|politics)\b/.test(q) && !/\b(skin|skincare|sckincare|face|cream|acne|serum|sunscreen)\b/.test(q)) {
-    return "I am specialized strictly as your **AI Beauty Advisor** 🧴. I can only assist with skincare routines, skin types, product matching, and dermatological safety!";
+  // Out-of-Scope Non-Skincare Query (math, coding, politics, capital of France)
+  if (/\b(python|javascript|code|math|calculate|capital of france|president|recipe|weather|politics|football|cricket match score)\b/.test(q) && !/\b(skin|skincare|sckincare|face|cream|acne|serum|sunscreen|routine|moisturizer|cleanser)\b/.test(q)) {
+    return "I am specialized strictly as your **AI Beauty Advisor** 🧴. I can only assist with skincare routines, skin types, product matching, ingredients, and dermatological safety!";
   }
 
-  // ALL OTHER QUERIES (including celebrity skincare, Virat Kohli, routines, products) pass to OpenRouter LLM!
   return null;
 }
 
-function runBeautyGuardrailsEngine(userQuery) {
+/**
+ * Product Catalog Recommendation Intent Classifier
+ */
+function isCatalogRecommendationIntent(userQuery) {
   const q = userQuery.toLowerCase().trim();
+  const recKeywords = /\b(recommend|recommendation|catalog|product for|buy|under my budget|under \$\d+|best product|pick a cleanser|pick a moisturizer|top product)\b/;
+  return recKeywords.test(q);
+}
 
-  // 1. Celebrities & Athletes (e.g. Virat Kohli, sports, actors)
-  if (/\b(virat|kohli|celebrity|athlete|actor|sports|cricket)\b/.test(q)) {
-    return "High-performance outdoor athletes like **Virat Kohli** focus on intense sun & sweat protection: 1. **Broad-Spectrum Sunscreen (SPF 50+)** to shield against UV rays, 2. **Salicylic Acid Cleanser** to clear sweat & prevent breakouts, and 3. **Hyaluronic Acid Gel** for lightweight hydration! ☀️🏏";
+/**
+ * Executes Recommendation Engine for Product Recommendation Queries
+ */
+function handleProductRecommendationQuery(userQuery) {
+  if (!engine) return "BeautyAI Recommendation Engine is initializing. Please try again in a moment!";
+
+  const q = userQuery.toLowerCase().trim();
+  let skinType = selectedSkinTypes[0] || 'oily';
+  if (q.includes('dry')) skinType = 'dry';
+  if (q.includes('combination')) skinType = 'combination';
+  if (q.includes('sensitive')) skinType = 'sensitive';
+  if (q.includes('oily')) skinType = 'oily';
+
+  let category = null;
+  if (q.includes('cleanser')) category = 'cleanser';
+  if (q.includes('toner')) category = 'toner';
+  if (q.includes('serum')) category = 'serum';
+  if (q.includes('moisturizer')) category = 'moisturizer';
+  if (q.includes('sunscreen') || q.includes('spf')) category = 'sunscreen';
+
+  const userProfile = {
+    skin_types: [skinType],
+    concerns: [...selectedConcerns],
+    preferred_ingredients: [...selectedIngredients],
+    max_price: maxBudget,
+    min_rating: minRating
+  };
+
+  const res = engine.recommend(userProfile, category, 3);
+  if (!res.recommendations || res.recommendations.length === 0) {
+    return `I searched our catalog for **${skinType}** skin, but no products matched your budget ($${maxBudget}) or rating constraints. Try increasing your max budget!`;
   }
 
-  // 2. Double Cleansing
-  if (/\b(double clean|double cleansing|oil cleanser|balm|makeup removal)\b/.test(q)) {
-    return "**Double Cleansing** is a 2-step cleansing technique: Step 1 uses an **Oil Cleanser or Cleansing Balm** to dissolve oil-soluble sunscreen, makeup, and sebum. Step 2 uses a **Water-Based Cleanser** to wash away residual dirt and water-based impurities! 🧴💧";
-  }
+  const top = res.recommendations[0];
+  const p = top.product;
 
-  // 3. Glass Skin & Glow
-  if (/\b(glass skin|glow|glowing|bright|radiant|shine)\b/.test(q)) {
-    return "To achieve **Glass Skin**, focus on deep hydration & mild exfoliation: Layer **Hyaluronic Acid Essence/Toner**, use **Niacinamide 5%** for pore refinement, and exfoliate 2x weekly with **Glycolic Acid (AHA)** for translucent, smooth texture! ✨";
-  }
-
-  // 4. Dark Circles & Eye Care
-  if (/\b(dark circle|eye|puffiness|crow|under eye)\b/.test(q)) {
-    return "For **Dark Circles & Eye Puffiness**, look for eye creams containing **Caffeine** (reduces fluid retention & swelling), **Niacinamide** (brightens pigmentation), and **Peptides / Retinol** (thickens delicate under-eye skin)! 👁️✨";
-  }
-
-  // 5. Sunburn & Soothing
-  if (/\b(sunburn|burn|sooth|tanned|tanning|aloe)\b/.test(q)) {
-    return "For **Sunburn & Tanned Skin**, immediately cool skin with **Pure Aloe Vera Gel** and **Centella Asiatica (Cica)**. Use **Ceramides** to repair the damaged moisture barrier, and strictly avoid harsh exfoliants (AHAs/BHAs) until fully healed! 🧴🧊";
-  }
-
-  // 6. Oily Skin
-  if (/\b(oily|greasy|sebum|oiliness|oil|kil|oily kil)\b/.test(q)) {
-    return "For **Oily Skin**, focus on lightweight oil-control ingredients: **Salicylic Acid (BHA)**, **Niacinamide**, and **Zinc**. Try *CeraVe Foaming Cleanser* and *Neutrogena Hydro Boost Gel*!";
-  }
-
-  // 7. Dry & Dehydrated Skin
-  if (/\b(dry|dehydrated|flaky|peeling|dryness)\b/.test(q)) {
-    return "For **Dry Skin**, prioritize intense barrier repair: **Ceramides**, **Hyaluronic Acid**, and **Glycerin**. Check out *CeraVe Moisturizing Cream* and *La Roche-Posay Toleriane Cleanser*!";
-  }
-
-  // 8. Acne & Pimples
-  if (/\b(acne|pimple|blackhead|whitehead|breakout|zit|scars)\b/.test(q)) {
-    return "For **Acne-Prone Skin**, use unclogging active ingredients: **Salicylic Acid 2%**, **Adapalene**, or **Niacinamide**. *Paula's Choice 2% BHA* and *Differin Gel* are top dermatological picks!";
-  }
-
-  // 9. Hyperpigmentation & Dark Spots
-  if (/\b(pigment|dark spot|hyperpigmentation|dull|brighten)\b/.test(q)) {
-    return "For **Hyperpigmentation & Dark Spots**, use brightening antioxidants: **Vitamin C (L-Ascorbic Acid)**, **Alpha Arbutin**, and **Glycolic Acid (AHA)** paired with daily **SPF 50+**!";
-  }
-
-  // 10. Anti-Aging & Wrinkles
-  if (/\b(aging|wrinkle|fine line|retinol|peptide|youth)\b/.test(q)) {
-    return "For **Anti-Aging**, golden standard ingredients are **Retinol**, **Peptides**, and **Broad-Spectrum Sunscreen**. Try *RoC Line Smoothing Serum* or *The Ordinary Retinol in Squalane*!";
-  }
-
-  // 11. Sensitive Skin & Redness
-  if (/\b(sensitive|redness|rosacea|irritat|inflammation)\b/.test(q)) {
-    return "For **Sensitive & Irritated Skin**, use soothing barrier repair ingredients: **Centella Asiatica (Cica)**, **Azelaic Acid**, and **Colloidal Oatmeal**. Strictly use fragrance-free products!";
-  }
-
-  // 12. Routine Steps & Order
-  if (/\b(step|order|routine|sequence|how to apply)\b/.test(q)) {
-    return "The ideal 5-step skincare routine order is: **1. Cleanser 🧴 → 2. Toner 💧 → 3. Serum/Active ✨ → 4. Moisturizer 🫧 → 5. Sunscreen (AM) ☀️**.";
-  }
-
-  // 13. Sunscreen & SPF
-  if (/\b(sunscreen|spf|sun|uv)\b/.test(q)) {
-    return "Daily **SPF 30+** is mandatory to prevent sun damage & premature aging! For oily skin: *EltaMD UV Clear SPF 46*. For dry skin: *Isntree Hyaluronic Sun Gel*.";
-  }
-
-  // 14. Comprehensive Generic Skincare Advice
-  return "For general skincare health, follow the core 3-pillar rule: **1. Cleanse** (with a gentle pH-balanced cleanser), **2. Hydrate & Repair** (using Niacinamide or Ceramides), and **3. Protect** (with daily SPF 30+ sunscreen). Select your skin type on the left to generate an exact routine!";
+  return `Based on our **BeautyAI Hybrid Engine** (Canonical Score: <strong>${top.match_score}%</strong>):<br/><br/>
+  🌟 <strong>${p.brand} ${p.name}</strong> ($${p.price.toFixed(2)})<br/>
+  ⭐ Rating: <strong>${p.rating} / 5.0</strong> (${p.rating_count.toLocaleString()} reviews)<br/>
+  ✨ Active Ingredients: <strong>${p.active_ingredients.join(', ')}</strong><br/><br/>
+  <em>${p.description}</em>`;
 }
 
 // ─── Page Switching ────────────────────────────────────────────────────────────
